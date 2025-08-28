@@ -89,8 +89,9 @@ load_recovery_kernel_modules() {
         set -- $line
         # Skip commented entries
         [ "$1" = "#" ] && continue
-        tell_kmsg "Loading $1"
-        modprobe -v -a "$1" > /dev/kmsg 2>&1
+        modname=$(basename "$1" .ko)
+        tell_kmsg "Loading $modname"
+        /sbin/modprobe "$modname" > /dev/kmsg 2>&1
     done
 }
 

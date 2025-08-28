@@ -429,24 +429,39 @@ mount_kernel_modules() {
 }
 
 load_kernel_modules() {
-	mkdir -p /lib/modules
-	ln -sf /lib/modules "/lib/modules/$(uname -r)"
+	[ ! -d /lib/modules ] && return
 
-	tell_kmsg "Loading kernel modules from $(pwd)"
+	kver=$(uname -r)
+	if [ ! -e "/lib/modules/${kver}" ]; then
+		# modprobe expects modules to be in a kernel release subfolder
+		mv /lib/modules "/lib/${kver}"
+		mkdir /lib/modules
+		mv "/lib/${kver}" "/lib/modules/${kver}"
+	fi
 
-	# Has to exist for busybox modprobe to work
-	touch "/lib/modules/$(uname -r)"/modules.builtin
+	tell_kmsg "Loading kernel modules from /lib/modules/${kver}"
 
 	# Convert modules.blocklist to modprobe.d blacklist
 	mkdir -p /etc/modprobe.d
-	cat "/lib/modules/$(uname -r)"/modules.blocklist | sed -e 's/blocklist/blacklist/g' >> /etc/modprobe.d/blacklist.conf
+	cat "/lib/modules/${kver}"/modules.blocklist | sed -e 's/blocklist/blacklist/g' >> /etc/modprobe.d/blacklist.conf
 
-	cat "/lib/modules/$(uname -r)/modules.load" | while read line; do
+	# Prefer kmod to built-in busybox utils
+	ln -sf /bin/kmod /sbin/depmod
+	ln -sf /bin/kmod /sbin/insmod
+
+	# kmod modprobe expects modules.dep.bin, so run depmod
+	/sbin/depmod -a
+
+	# Use blacklist and enable verbose output (override the value set by /init)
+	export MODPROBE_OPTIONS="-vb"
+
+	cat "/lib/modules/${kver}/modules.load" | while read line; do
 		set -- $line
 		# Skip commented entries
 		[ "$1" = "#" ] && continue
-		tell_kmsg "Loading $1"
-		modprobe -v -a "$1" > /dev/kmsg 2>&1
+		modname=$(basename "$1" .ko)
+		tell_kmsg "Loading $modname"
+		/sbin/modprobe "$modname" > /dev/kmsg 2>&1
 	done
 }
 
