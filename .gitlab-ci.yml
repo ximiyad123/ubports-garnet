@@ -32,6 +32,8 @@ build-android12-5.10:
   extends: build
   before_script:
     - ln -sf deviceinfo-android12-5.10 deviceinfo
+  after_script:
+   - ./make-bootimages.sh
   rules:
    - if: $CI_PIPELINE_SOURCE == "push"
 
@@ -40,6 +42,8 @@ build-android13-5.10:
   extends: build
   before_script:
     - ln -sf deviceinfo-android13-5.10 deviceinfo
+  after_script:
+   - ./make-bootimages.sh
   rules:
    - if: $CI_PIPELINE_SOURCE == "push"
 
@@ -48,6 +52,8 @@ build-android13-5.15:
   extends: build
   before_script:
     - ln -sf deviceinfo-android13-5.15 deviceinfo
+  after_script:
+   - ./make-bootimages.sh
   rules:
    - if: $CI_PIPELINE_SOURCE == "push"
 
@@ -56,6 +62,8 @@ build-android14-6.1:
   extends: build
   before_script:
     - ln -sf deviceinfo-android14-6.1 deviceinfo
+  after_script:
+   - ./make-bootimages.sh
   rules:
    - if: $CI_PIPELINE_SOURCE == "push"
 
@@ -74,6 +82,11 @@ devel-flashable-android12-5.10:
     - ln -sf deviceinfo-android12-5.10 deviceinfo
   rules:
    - if: $CI_PIPELINE_SOURCE == "push"
+  artifacts:
+    paths:
+      - out/boot*.img
+      - out/init_boot.img
+      - out/ubuntu.img
 
 devel-flashable-android13-5.10:
   extends: [devel-flashable]
@@ -82,7 +95,11 @@ devel-flashable-android13-5.10:
     - ln -sf deviceinfo-android13-5.10 deviceinfo
   rules:
    - if: $CI_PIPELINE_SOURCE == "push"
-
+  artifacts:
+    paths:
+      - out/boot*.img
+      - out/init_boot.img
+      - out/ubuntu.img
 
 devel-flashable-android13-5.15:
   extends: [devel-flashable]
@@ -91,6 +108,11 @@ devel-flashable-android13-5.15:
     - ln -sf deviceinfo-android13-5.15 deviceinfo
   rules:
    - if: $CI_PIPELINE_SOURCE == "push"
+  artifacts:
+    paths:
+      - out/boot*.img
+      - out/init_boot.img
+      - out/ubuntu.img
 
 devel-flashable-android14-6.1:
   extends: [devel-flashable]
@@ -99,3 +121,8 @@ devel-flashable-android14-6.1:
     - ln -sf deviceinfo-android14-6.1 deviceinfo
   rules:
    - if: $CI_PIPELINE_SOURCE == "push"
+  artifacts:
+    paths:
+      - out/boot*.img
+      - out/init_boot.img
+      - out/ubuntu.img
