@@ -1,0 +1,16 @@
+[Unit]
+Description=Generate libinput quirks for problematic touchscreen devices
+After=systemd-udev-trigger.service lxc-android-config.service
+Before=systemd-user-sessions.service display-manager.service
+ConditionPathExists=/dev/input
+ConditionPathExists=!/etc/libinput/local-overrides.quirks
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/lxc-android-config/generate-libinput-quirks
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
