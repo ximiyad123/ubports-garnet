@@ -2,8 +2,7 @@ include:
   - https://gitlab.com/ubports/porting/community-ports/halium-generic-adaptation-build-tools/-/raw/main/gsi-port-ci.yml
 
 variables:
-  ROOTFS_URL: "https://ci.ubports.com/job/ubuntu-touch-rootfs/job/ubports%252Ffocal/lastSuccessfulBuild/artifact/ubuntu-touch-android9plus-rootfs-arm64.tar.gz"
-  OTA_CHANNEL: "20.04/arm64/android9plus/stable"
+  OTA_CHANNEL: "utnext/arm64/android9plus/daily"
 
 image: ubuntu:20.04
 
@@ -16,8 +15,18 @@ flashable:
    - when: never
 
 devel-flashable:
+  tags: [ubports]
   rules:
    - when: never
+  after_script:
+    - apt install -y zstd
+    - zstd -15 -T0 out/ubuntu.img
+    - rm -f out/ubuntu.img
+  artifacts:
+    paths:
+      - out/boot*.img
+      - out/init_boot.img
+      - out/ubuntu.img.zst
 
 build-android12-5.4:
   tags: [ubports]
@@ -82,11 +91,6 @@ devel-flashable-android12-5.10:
     - ln -sf deviceinfo-android12-5.10 deviceinfo
   rules:
    - if: $CI_PIPELINE_SOURCE == "push"
-  artifacts:
-    paths:
-      - out/boot*.img
-      - out/init_boot.img
-      - out/ubuntu.img
 
 devel-flashable-android13-5.10:
   extends: [devel-flashable]
@@ -95,11 +99,6 @@ devel-flashable-android13-5.10:
     - ln -sf deviceinfo-android13-5.10 deviceinfo
   rules:
    - if: $CI_PIPELINE_SOURCE == "push"
-  artifacts:
-    paths:
-      - out/boot*.img
-      - out/init_boot.img
-      - out/ubuntu.img
 
 devel-flashable-android13-5.15:
   extends: [devel-flashable]
@@ -108,11 +107,6 @@ devel-flashable-android13-5.15:
     - ln -sf deviceinfo-android13-5.15 deviceinfo
   rules:
    - if: $CI_PIPELINE_SOURCE == "push"
-  artifacts:
-    paths:
-      - out/boot*.img
-      - out/init_boot.img
-      - out/ubuntu.img
 
 devel-flashable-android14-6.1:
   extends: [devel-flashable]
@@ -121,8 +115,3 @@ devel-flashable-android14-6.1:
     - ln -sf deviceinfo-android14-6.1 deviceinfo
   rules:
    - if: $CI_PIPELINE_SOURCE == "push"
-  artifacts:
-    paths:
-      - out/boot*.img
-      - out/init_boot.img
-      - out/ubuntu.img
