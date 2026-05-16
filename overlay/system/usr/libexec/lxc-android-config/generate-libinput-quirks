@@ -284,8 +284,8 @@ def generate_quirks_config(devices):
         config_lines.append(f"MatchName={device_name}")
 
         # Disable the problematic event codes
-        disabled_codes = ";".join(axes)
-        config_lines.append(f"AttrEventCodeDisable={disabled_codes};")
+        disabled_codes = ";".join(f"-{axis}" for axis in axes)
+        config_lines.append(f"AttrEventCode={disabled_codes};")
         config_lines.append("")
 
     return "\n".join(config_lines)
