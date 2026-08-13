@@ -22,8 +22,8 @@ TMP="$BUILD_DIR/tmp"
 
 source ./deviceinfo
 
-deviceinfo_kernel_image_name="Image.lz4" ./build/make-bootimage.sh "$TMPDOWN" \
-   "$TMPDOWN/KERNEL_OBJ" "$TMPDOWN/halium-boot-ramdisk.img" "$TMP/partitions/boot-lz4.img" "$TMP/system"
+deviceinfo_kernel_image_name="Image" ./build/make-bootimage.sh "$TMPDOWN" \
+   "$TMPDOWN/KERNEL_OBJ" "$TMPDOWN/halium-boot-ramdisk.img" "$TMP/partitions/boot.img" "$TMP/system"
 
 tar -cJf "$OUT/device_${deviceinfo_codename}.tar.xz" -C "$TMP" --owner=root --group=root partitions/ system/
 # Remove compatibility hard-links to avoid confusion

@@ -155,12 +155,30 @@ fi
 # Report for the logs
 /sbin/ifconfig -a
 
-# Unable to set up USB interface? Reboot.
-if [ x$USB_IFACE = xnotfound ]; then
-	usb_info "Halium initrd Debug: ERROR: could not setup USB as usb0 or rndis0"
-	dmesg
-	sleep 60 # plenty long enough to check usb on host
-	reboot -f
+# Unable to set up USB interface? Panic.
+if [ "x$USB_IFACE" = "xnotfound" ]; then
+        usb_info "Halium initrd Debug: ERROR: could not setup USB as usb0 or rndis0"
+
+        # Check for 5.10.245 directory specifically
+        TARGET_DIR=$(ls -d /lib/modules/5.10.245* 2>/dev/null | head -n 1)
+
+        if [ -n "$TARGET_DIR" ]; then
+                # Directory exists, now check if it contains any .ko module files
+                if find "$TARGET_DIR" -type f -name "*.ko" 2>/dev/null | grep -q .; then
+                        # Directory exists AND contains module files -> sleep 35s
+                        sleep 35
+                else
+                        # 5.10.245* directory exists BUT HAS NO MODULES inside -> sleep 25s
+                        sleep 25
+                fi
+        else
+                # /lib/modules missing, empty, or 5.10.245* folder doesn't exist -> sleep 15s
+                sleep 15
+        fi
+
+        # Enable sysrq and force a kernel crash/panic
+        echo 1 > /proc/sys/kernel/sysrq
+        echo c > /proc/sysrq-trigger
 fi
 
 # Create /etc/udhcpd.conf file.
