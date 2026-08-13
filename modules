@@ -1,0 +1,57 @@
+#!/bin/bash
+set -euo pipefail
+
+KERNEL_OBJ="workdir/downloads/KERNEL_OBJ"
+MODDIR="vendor-ramdisk-overlay/lib/modules"
+
+mkdir -p "$MODDIR"
+
+# Copy every .ko flat by basename only, regardless of source subdirectory
+find "$KERNEL_OBJ" -name '*.ko' -exec cp -t "$MODDIR/" {} +
+
+echo "Copied .ko count:"; find "$MODDIR" -maxdepth 1 -name '*.ko' | wc -l
+
+# modules.load: every .ko present, bare filename, minus anything blocklisted
+find "$MODDIR" -maxdepth 1 -name '*.ko' -printf '%f\n' | sort > "$MODDIR/modules.load.tmp"
+if [ -s "$MODDIR/modules.blocklist" ]; then
+    grep -vFf <(awk '{print $2}' "$MODDIR/modules.blocklist") \
+        "$MODDIR/modules.load.tmp" > "$MODDIR/modules.load"
+else
+    mv "$MODDIR/modules.load.tmp" "$MODDIR/modules.load"
+fi
+rm -f "$MODDIR/modules.load.tmp"
+
+echo "modules.load lines:"; wc -l < "$MODDIR/modules.load"
+
+# --- Generate modules.dep ---
+TEMP_DIR=$(mktemp -d)
+trap 'rm -rf "$TEMP_DIR"' EXIT
+
+# Extract kernel version or fallback to a dummy version string
+KERNEL_VER=$(cat "$KERNEL_OBJ/include/config/kernel.release" 2>/dev/null || echo "0.0.0")
+STAGING_DIR="$TEMP_DIR/lib/modules/$KERNEL_VER"
+mkdir -p "$STAGING_DIR"
+
+# Copy flat modules into temporary directory structure required by depmod
+cp "$MODDIR"/*.ko "$STAGING_DIR/"
+
+DEPMOD_FLAGS=(-b "$TEMP_DIR")
+if [ -f "$KERNEL_OBJ/System.map" ]; then
+    DEPMOD_FLAGS+=(-F "$KERNEL_OBJ/System.map")
+fi
+
+# Run depmod against the temporary root
+depmod "${DEPMOD_FLAGS[@]}" "$KERNEL_VER"
+
+# Copy generated dependency maps to target directory
+cp "$STAGING_DIR"/modules.dep* "$STAGING_DIR"/modules.alias* "$STAGING_DIR"/modules.symbols* "$MODDIR/" 2>/dev/null || true
+
+# --- FIX: Post-process modules.dep ---
+if [ -f "$MODDIR/modules.dep" ]; then
+    # 1. Join lines ending with backslashes (\) into a single line
+    # 2. Strip subfolder paths so only bare filenames remain
+    sed -i -e ':a; /\\$/{N; s/\\\n//; ba}' \
+           -e 's|[^: ]+/||g' "$MODDIR/modules.dep"
+fi
+
+echo "modules.dep lines:"; wc -l < "$MODDIR/modules.dep"
