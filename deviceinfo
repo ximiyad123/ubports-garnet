@@ -1,56 +1,30 @@
-# Basic device information
+deviceinfo_name="Redmi Note 13 Pro 5G/POCO X6"
 deviceinfo_manufacturer="Xiaomi"
-deviceinfo_name="Redmi Note 13 Pro 5G"
 deviceinfo_codename="garnet"
 deviceinfo_arch="aarch64"
-# Kernel Source & Modules (LineageOS Base)
 deviceinfo_kernel_source="https://github.com/ximiyad123/android_kernel_xiaomi_sm7435.git"
 deviceinfo_kernel_source_branch="lineage-halium-23.0"
-deviceinfo_kernel_modules_source="https://github.com/LineageOS/android_kernel_xiaomi_sm7435-modules.git"
-deviceinfo_kernel_modules_source_branch="lineage-23.0"
-# Compiler Configuration
-deviceinfo_kernel_clang_compile="true"
-deviceinfo_kernel_llvm_compile="true"
-deviceinfo_kernel_clang_branch="main-kernel-build-2023"
-deviceinfo_kernel_clang_revision="r487747c"
-deviceinfo_kernel_use_lld="true"
-# Pre-built DTB & Bootconfig Paths
+deviceinfo_kernel_defconfig="gki_defconfig vendor/parrot_GKI.config vendor/garnet_GKI.config halium.config"
+deviceinfo_kernel_cmdline="systempart=/dev/mapper/system"
+deviceinfo_kernel_vendor_cmdline="disable_dma32=on sysctl.kernel.firmware_config.force_sysfs_fallback=1 bootconfig"
 deviceinfo_bootimg_prebuilt_dtb="files/dtb"
 deviceinfo_vendor_bootconfig_path="files/bootconfig"
-# Defconfig and Targets
-deviceinfo_kernel_image_name="Image"
-deviceinfo_kernel_image_target="Image"
-deviceinfo_kernel_defconfig="gki_defconfig vendor/parrot_GKI.config vendor/garnet_GKI.config halium.config"
-deviceinfo_kernel_env="TARGET_PRODUCT=garnet"
-# Command Line Arguments
-deviceinfo_kernel_cmdline="console=tty0 disable_dma32=on sysctl.kernel.firmware_config.force_sysfs_fallback=1 loop.max_part=7"
-deviceinfo_kernel_vendor_cmdline="bootopt=64S3,32N2,64N2 systempart=/dev/mapper/system"
-# Boot Image Header v4 & Partition Parameters
-deviceinfo_bootimg_header_version="4"
-deviceinfo_bootimg_qcdt="false"
-deviceinfo_flash_pagesize="4096"
-deviceinfo_flash_offset_base="0x0"
-deviceinfo_flash_offset_kernel="0x10008000"
-deviceinfo_flash_offset_ramdisk="0x11000000"
-deviceinfo_flash_offset_tags="0x10000100"
-deviceinfo_flash_offset_dtb="0x11f00000"
-deviceinfo_flash_offset_second="0x00000000"
-deviceinfo_bootimg_partition_size="201326592"
-deviceinfo_recovery_partition_size="104857600"
-deviceinfo_vendor_boot_partition_size="100663296"
-deviceinfo_bootimg_os_version="16"
-deviceinfo_bootimg_os_patch_level="2026-02"
-# GKI & Init Boot Configuration
+deviceinfo_kernel_clang_compile="true"
+deviceinfo_kernel_llvm_compile="true"
+deviceinfo_prebuilt_boot_ramdisk_source="https://github.com/halium/initramfs-tools-halium/releases/download/dynparts/initrd.img-touch-arm64"
 deviceinfo_ramdisk_compression="lz4"
-deviceinfo_has_recovery_partition="true"
-deviceinfo_use_unified_recovery="true"
-deviceinfo_unified_recovery_ui_density="xxhdpi"
-# HALIUM & Ubuntu Touch Targets
+deviceinfo_flash_pagesize="4096"
+deviceinfo_bootimg_qcdt="false"
+deviceinfo_bootimg_header_version="4"
+deviceinfo_flash_offset_base="0x00000000"
+deviceinfo_flash_offset_kernel="0x00008000"
+deviceinfo_flash_offset_ramdisk="0x01000000"
+deviceinfo_flash_offset_tags="0x00000100"
+deviceinfo_flash_offset_dtb="0x01f00000"
+# Needed for AVB footer, fine as long as it is less or the same
+deviceinfo_bootimg_partition_size="201326592"
+deviceinfo_bootimg_os_version="12"
+deviceinfo_bootimg_os_patch_level="2025-09"
 deviceinfo_rootfs_image_sector_size="4096"
-deviceinfo_system_partition_size="4500M"
-# NOTE: verify this against the actual Halium branch/tree you're building from —
-# Halium's version numbering tracks Android/VNDK base, and officially only goes
-# up to halium-12.0 (Android 12 / LineageOS 19). It doesn't cleanly line up with
-# an Android 16 / LineageOS 23 base (lineage-halium-23.0, bootimg_os_version=16).
 deviceinfo_halium_version="12"
-deviceinfo_ubuntu_touch_release="24.04-2.x"
+deviceinfo_ubuntu_touch_release="24.04-1.x"
