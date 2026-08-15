@@ -11,7 +11,7 @@ Ubuntu Touch / Halium port for the **Redmi Note 13 Pro 5G / POCO X6** (codename 
 | Manufacturer | Xiaomi |
 | Model | Redmi Note 13 Pro 5G / POCO X6 |
 | Codename | garnet |
-| SoC | Qualcomm SM7435 (Snapdragon 6 Gen 3-class) |
+| SoC | Qualcomm SM7435 (Snapdragon 7s Gen 2) |
 | Arch | aarch64 |
 | Kernel | 5.10.245-gki-g4e825ba35213 |
 | Halium | 12 |
