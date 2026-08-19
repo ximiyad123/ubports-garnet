@@ -1,0 +1,13 @@
+[Unit]
+Description=Disable Xiaomi CIT Sensor Service to Fix Display Flicker
+After=lightdm.service
+Wants=lightdm.service
+
+[Service]
+Type=oneshot
+ExecStartPre=/bin/sleep 5
+ExecStart=/usr/libexec/fix-flicker
+RemainAfterExit=yes
+
+[Install]
+WantedBy=graphical.target

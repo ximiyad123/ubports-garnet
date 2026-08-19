@@ -1,0 +1,7 @@
+#!/bin/sh
+
+# Loop the service to fix screen flicker
+
+while true; do
+    sleep 100000000
+done
