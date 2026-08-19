@@ -8,6 +8,7 @@ Halium-based Ubuntu Touch port for Xiaomi Redmi Note 13 Pro 5G / Poco X6 5G (`ga
 | :--- | :--- | :--- |
 | **Display** | Working | |
 | **Touchscreen** | Working | |
+| **USB OTG** | Working | |
 | **Wi-Fi** | Working | |
 | **Bluetooth** | Working | |
 | **Battery & Charging** | Working | Fast charging supported |
@@ -23,6 +24,8 @@ Halium-based Ubuntu Touch port for Xiaomi Redmi Note 13 Pro 5G / Poco X6 5G (`ga
 
 * **Dual SIM:** Only SIM slot 1 is functional (single SIM working).
 * **Recovery Mode:** Recovery mode does not work. Attempting to boot into recovery will simply boot into Ubuntu Touch anyway.
+* **ADB/SSH over usb:** Doesn't work yet.
+
 
 ## Building
 
