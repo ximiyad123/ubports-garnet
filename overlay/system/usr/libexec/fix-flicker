@@ -1,0 +1,5 @@
+#!/bin/bash
+# Host script to run inside LXC Android container using Android's shell
+
+/usr/bin/lxc-attach -n android -- /system/bin/sh -c "touch /data/null && mount --bind /data/null /vendor/bin/hw/vendor.xiaomi.sensor.citsensorservice@2.0-service && killall -9 vendor.xiaomi.sensor.citsensorservice@2.0-service"
+

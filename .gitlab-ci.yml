@@ -1,0 +1,117 @@
+include:
+  - https://gitlab.com/ubports/porting/community-ports/halium-generic-adaptation-build-tools/-/raw/main/gsi-port-ci.yml
+
+variables:
+  OTA_CHANNEL: "utnext/arm64/android9plus/daily"
+
+image: ubuntu:20.04
+
+build:
+  rules:
+   - when: never
+
+flashable:
+  rules:
+   - when: never
+
+devel-flashable:
+  tags: [ubports]
+  rules:
+   - when: never
+  after_script:
+    - apt install -y zstd
+    - zstd -15 -T0 out/ubuntu.img
+    - rm -f out/ubuntu.img
+  artifacts:
+    paths:
+      - out/boot*.img
+      - out/init_boot.img
+      - out/ubuntu.img.zst
+
+build-android12-5.4:
+  tags: [ubports]
+  extends: build
+  before_script:
+    - ln -sf deviceinfo-android12-5.4 deviceinfo
+  rules:
+   - if: $CI_PIPELINE_SOURCE == "push"
+
+build-android12-5.10:
+  tags: [ubports]
+  extends: build
+  before_script:
+    - ln -sf deviceinfo-android12-5.10 deviceinfo
+  after_script:
+   - ./make-bootimages.sh
+  rules:
+   - if: $CI_PIPELINE_SOURCE == "push"
+
+build-android13-5.10:
+  tags: [ubports]
+  extends: build
+  before_script:
+    - ln -sf deviceinfo-android13-5.10 deviceinfo
+  after_script:
+   - ./make-bootimages.sh
+  rules:
+   - if: $CI_PIPELINE_SOURCE == "push"
+
+build-android13-5.15:
+  tags: [ubports]
+  extends: build
+  before_script:
+    - ln -sf deviceinfo-android13-5.15 deviceinfo
+  after_script:
+   - ./make-bootimages.sh
+  rules:
+   - if: $CI_PIPELINE_SOURCE == "push"
+
+build-android14-6.1:
+  tags: [ubports]
+  extends: build
+  before_script:
+    - ln -sf deviceinfo-android14-6.1 deviceinfo
+  after_script:
+   - ./make-bootimages.sh
+  rules:
+   - if: $CI_PIPELINE_SOURCE == "push"
+
+devel-flashable-android12-5.4:
+  extends: [devel-flashable]
+  needs: [build-android12-5.4]
+  before_script:
+    - ln -sf deviceinfo-android12-5.4 deviceinfo
+  rules:
+   - if: $CI_PIPELINE_SOURCE == "push"
+
+devel-flashable-android12-5.10:
+  extends: [devel-flashable]
+  needs: [build-android12-5.10]
+  before_script:
+    - ln -sf deviceinfo-android12-5.10 deviceinfo
+  rules:
+   - if: $CI_PIPELINE_SOURCE == "push"
+
+devel-flashable-android13-5.10:
+  extends: [devel-flashable]
+  needs: [build-android13-5.10]
+  before_script:
+    - ln -sf deviceinfo-android13-5.10 deviceinfo
+  rules:
+   - if: $CI_PIPELINE_SOURCE == "push"
+
+devel-flashable-android13-5.15:
+  extends: [devel-flashable]
+  needs: [build-android13-5.15]
+  before_script:
+    - ln -sf deviceinfo-android13-5.15 deviceinfo
+  rules:
+   - if: $CI_PIPELINE_SOURCE == "push"
+
+devel-flashable-android14-6.1:
+  extends: [devel-flashable]
+  needs: [build-android14-6.1]
+  before_script:
+    - ln -sf deviceinfo-android14-6.1 deviceinfo
+  rules:
+   - if: $CI_PIPELINE_SOURCE == "push"
