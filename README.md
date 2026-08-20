@@ -10,6 +10,7 @@ Halium-based Ubuntu Touch port for Xiaomi Redmi Note 13 Pro 5G / Poco X6 5G (`ga
 | **Touchscreen** | Working | |
 | **USB OTG** | Working | |
 | **Wi-Fi** | Working | |
+| **Haptics** | Broken | |
 | **Bluetooth** | Working | |
 | **Battery & Charging** | Working | Fast charging supported |
 | **Telephony** | Working | Calls, SMS, Data |
