@@ -15,9 +15,9 @@ Halium-based Ubuntu Touch port for Xiaomi Redmi Note 13 Pro 5G / Poco X6 5G (`ga
 | **Battery & Charging** | Working | Fast charging supported |
 | **Telephony** | Working | Calls, SMS, Data |
 | **Waydroid** | Working | |
-| **Camera** | Partial | Photos work fine; video recording works in Waydroid only |
+| **Camera** | Working | |
 | **GPS** | Working | |
-| **Audio** | Broken | |
+| **Audio** | Partial? | |
 | **Fingerprint** | Broken | |
 | **NFC** | Broken | |
 
@@ -27,6 +27,7 @@ Halium-based Ubuntu Touch port for Xiaomi Redmi Note 13 Pro 5G / Poco X6 5G (`ga
 * **Recovery Mode:** Recovery mode does not work. Attempting to boot into recovery will simply boot into Ubuntu Touch anyway.
 * **ADB/SSH over usb:** Doesn't work yet.
 * **Flashlight:** Flashlight from quick settings doesn't work. Download the UTorch app instead.
+* **Audio:** Stuttery in Waydroid, Mic and Audio may not work in calls
 
 
 ## Building
