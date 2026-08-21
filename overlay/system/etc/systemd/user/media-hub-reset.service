@@ -1,0 +1,10 @@
+[Unit]
+Description=One-time Media Hub Cache Cleanup
+SuccessAction=exit
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c "systemctl --user stop media-hub.service 2>/dev/null || true; rm -rf %C/gstreamer-1.0 %C/media-hub %E/media-hub; rm -f /etc/systemd/user/media-hub-reset.service /etc/systemd/user/default.target.wants/media-hub-reset.service"
+
+[Install]
+WantedBy=default.target
