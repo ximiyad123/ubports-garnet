@@ -19,5 +19,5 @@ deviceinfo_bootimg_os_version="12"
 deviceinfo_bootimg_os_patch_level="2023-05"
 deviceinfo_rootfs_image_sector_size="4096"
 deviceinfo_halium_version="12"
-deviceinfo_ubuntu_touch_release="24.04-1.x"
+deviceinfo_ubuntu_touch_release="24.04-2.x"
 
