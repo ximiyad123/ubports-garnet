@@ -36,3 +36,6 @@ Halium-based Ubuntu Touch port for Xiaomi Redmi Note 13 Pro 5G / Poco X6 5G (`ga
 
 ```bash
 ./build.sh
+./build/prepare-fake-ota.sh out/device_garnet_usrmerge.tar.xz ota
+sudo ./build/system-image-from-ota.sh ota/ubuntu_command images
+./make-installer-images.sh
