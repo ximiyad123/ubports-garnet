@@ -1,6 +1,11 @@
 #!/bin/sh
-
-# Loop the service to fix screen flicker
+# DO NOT REMOVE.
+# This is intentionally a stub. The real Xiaomi CITSensorService
+# causes display flickering under Ubuntu Touch/Halium.
+# The vendor stack expects this service to stay alive.
+# Keeping this process alive prevents the flicker.
+#
+# Yes, this stupid-looking script is intentional.
 
 while true; do
     sleep 100000000
