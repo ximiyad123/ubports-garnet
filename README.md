@@ -28,6 +28,8 @@ Halium-based Ubuntu Touch port for Xiaomi Redmi Note 13 Pro 5G / Poco X6 5G (`ga
 * **ADB/SSH over usb:** Doesn't work yet.
 * **Flashlight:** Flashlight from quick settings doesn't work. Download the UTorch app instead.
 * **Audio:** Mic and Audio may not work in calls.
+* **Video Playback:** Says unable to find video backend when you try to play a video, use waydroid or browser instead.
+
 
 
 ## Building
