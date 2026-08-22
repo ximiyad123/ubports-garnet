@@ -1,0 +1,8 @@
+[33mcommit 64eae64cbbcb660ba969d4658bfc12f93ceda874[m
+Author: ximiyad123 <ximiyadka124@proton.me>
+Date:   Sat Aug 22 13:08:07 2026 +0200
+
+    Fix Audio stutter in waydroid
+
+ overlay/system/usr/lib/systemd/user/pulseaudio.service.d/ubuntu-touch.conf | 3 [32m+++[m
+ 1 file changed, 3 insertions(+)
