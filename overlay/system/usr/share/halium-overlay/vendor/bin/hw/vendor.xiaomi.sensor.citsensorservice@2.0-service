@@ -4,7 +4,7 @@
 # causes display flickering under Ubuntu Touch/Halium.
 # The vendor stack expects this service to stay alive.
 # Keeping this process alive prevents the flicker.
-#
+
 # Yes, this stupid-looking script is intentional.
 
 while true; do
