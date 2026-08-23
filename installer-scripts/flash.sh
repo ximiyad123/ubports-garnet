@@ -16,7 +16,7 @@ echo ""
 # Ensure images directory exists
 mkdir -p "$IMAGE_DIR"
 
-# Download missing vendor image if needed (defaulting to wget)
+# Download missing vendor image if needed
 VENDOR_IMG="$IMAGE_DIR/vendor.img"
 if [ ! -f "$VENDOR_IMG" ]; then
     echo "Downloading vendor image to $VENDOR_IMG..."
@@ -60,18 +60,18 @@ if [ -z "$PRODUCT" ]; then
 fi
 
 case "$PRODUCT" in
-  garnetp|garnet|XIG05|xig05)
-    echo "Detected supported device: $PRODUCT"
-    ;;
-  *)
-    echo "Warning: Unrecognized device codename '$PRODUCT'."
-    echo "This script targets garnetp / garnet / XIG05 (Redmi Note 13 Pro 5G / Poco X6)."
-    read -p "Continue anyway? (y/N): " forcechoice
-    case "$forcechoice" in
-      y|Y ) echo "Continuing at your own risk..." ;;
-      * ) echo "Aborting."; exit 1 ;;
-    esac
-    ;;
+    garnetp|garnet|XIG05|xig05)
+        echo "Detected supported device: $PRODUCT"
+        ;;
+    *)
+        echo "Warning: Unrecognized device codename '$PRODUCT'."
+        echo "This script targets garnetp / garnet / XIG05 (Redmi Note 13 Pro 5G / Poco X6)."
+        read -p "Continue anyway? (y/N): " forcechoice
+        case "$forcechoice" in
+            y|Y ) echo "Continuing at your own risk..." ;;
+            * ) echo "Aborting."; exit 1 ;;
+        esac
+        ;;
 esac
 echo ""
 
@@ -85,10 +85,12 @@ else
     echo "Warning: Unable to detect active slot suffix. Proceeding without slot suffix..."
 fi
 
-# Free product logical partition on the CURRENT slot only.
-echo "Freeing product$SLOT_SUFFIX from super, and erasing vendor$SLOT_SUFFIX..."
+# Free product logical partition and erase vendor/mi_ext on the CURRENT slot
+echo ""
+echo "Freeing product$SLOT_SUFFIX and mi_ext$SLOT_SUFFIX from super, and erasing vendor$SLOT_SUFFIX..."
 fastboot delete-logical-partition "product$SLOT_SUFFIX" 2>/dev/null || true
 fastboot erase "vendor$SLOT_SUFFIX" 2>/dev/null || true
+fastboot erase "mi_ext$SLOT_SUFFIX" 2>/dev/null || true
 
 # Wipe userdata and metadata via bootloader
 echo ""
@@ -96,21 +98,21 @@ echo "WARNING: This will erase all user data on the device."
 echo "NOTE: If you are updating Ubuntu Touch, proceed to select No."
 read -p "Wipe userdata now? (y/N): " wipechoice
 case "$wipechoice" in
-  y|Y ) 
-    echo "Rebooting to bootloader to perform data wipe..."
-    fastboot reboot bootloader
-    sleep 5
-    
-    echo "Wiping userdata and metadata via fastboot -w..."
-    fastboot -w
-    
-    echo "Rebooting back into fastbootd..."
-    fastboot reboot fastboot
-    sleep 5
-    ;;
-  * ) 
-    echo "Skipping data wipe." 
-    ;;
+    y|Y )
+        echo "Rebooting to bootloader to perform data wipe..."
+        fastboot reboot bootloader
+        sleep 5
+
+        echo "Wiping userdata and metadata via fastboot -w..."
+        fastboot -w
+
+        echo "Rebooting back into fastbootd..."
+        fastboot reboot fastboot
+        sleep 5
+        ;;
+    * )
+        echo "Skipping data wipe."
+        ;;
 esac
 echo ""
 
@@ -137,6 +139,7 @@ flash_image() {
 echo "Starting flash sequence..."
 flash_image "dtbo" "dtbo.img" "false"
 flash_image "boot" "boot.img" "true"
+flash_image "odm" "odm.img" "true"
 flash_image "vendor_boot" "vendor_boot.img" "false"
 flash_image "vendor_dlkm" "vendor_dlkm.img" "false"
 flash_image "vendor" "vendor.img" "true"
@@ -150,6 +153,6 @@ echo "=========================================="
 echo ""
 read -p "Reboot device into Ubuntu Touch now? (y/N): " choice
 case "$choice" in
-  y|Y ) fastboot reboot ;;
-  * ) echo "Finished. Reboot manually when ready." ;;
+    y|Y ) fastboot reboot ;;
+    * ) echo "Finished. Reboot manually when ready." ;;
 esac
