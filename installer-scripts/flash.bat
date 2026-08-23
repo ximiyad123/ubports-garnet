@@ -117,9 +117,12 @@ if defined CURRENT_SLOT (
 ) 
  
 echo. 
-echo Freeing product!SLOT_SUFFIX! from super, and erasing vendor!SLOT_SUFFIX!... 
+echo Freeing product!SLOT_SUFFIX! and mi_ext!SLOT_SUFFIX! from super, and erasing vendor!SLOT_SUFFIX!... 
 "%FASTBOOT%" delete-logical-partition product!SLOT_SUFFIX! >nul 2>&1 
 "%FASTBOOT%" erase vendor!SLOT_SUFFIX! >nul 2>&1 
+"%FASTBOOT%" erase mi_ext!SLOT_SUFFIX! >nul 2>&1 
+
+
  
 echo. 
 echo WARNING: This will erase all user data on the device. 
@@ -160,6 +163,17 @@ if exist "%IMAGE_DIR%\boot.img" (
     pause 
     exit /b 1 
 )
+
+:: Flash odm (Required)
+if exist "%IMAGE_DIR%\odm.img" (
+    echo Flashing odm.img to odm!SLOT_SUFFIX!... 
+    "%FASTBOOT%" flash odm!SLOT_SUFFIX! "%IMAGE_DIR%\odm.img"
+) else ( 
+    echo Error: odm.img not found in images\ directory! 
+    pause 
+    exit /b 1 
+)
+
 
 :: Flash vendor_boot (Optional)
 if exist "%IMAGE_DIR%\vendor_boot.img" (
