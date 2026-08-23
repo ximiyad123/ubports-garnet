@@ -1,8 +1,10 @@
-name: Build images
+name: Build Ubuntu Touch Image
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+      - ubports-garnet
   workflow_dispatch:
 
 jobs:
@@ -12,6 +14,14 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Print current directory workspace
+        run: |
+          echo "Working directory is: $GITHUB_WORKSPACE"
+          pwd
+          ls -la
 
       - name: Install dependencies
         run: |
@@ -37,7 +47,10 @@ jobs:
 
       - name: Run build scripts
         run: |
-          chmod +x build.sh build/prepare-fake-ota.sh build/system-image-from-ota.sh make-installer-images.sh
+          # Grant executable permissions to all script files in the repository
+          find . -type f -name "*.sh" -exec chmod +x {} +
+
+          # Run build process
           ./build.sh
           ./build/prepare-fake-ota.sh out/device_garnet_usrmerge.tar.xz ota
           sudo ./build/system-image-from-ota.sh ota/ubuntu_command images
