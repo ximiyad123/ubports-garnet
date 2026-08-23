@@ -59,4 +59,3 @@ jobs:
           name: ubuntu-touch-garnet-images
           path: |
             out/
-            images/
