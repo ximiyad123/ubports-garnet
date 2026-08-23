@@ -1,0 +1,44 @@
+name: Build System Image
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y \
+            git \
+            make \
+            bc \
+            bison \
+            flex \
+            libssl-dev \
+            libelf-dev \
+            xz-utils \
+            curl \
+            wget \
+            ca-certificates \
+            kmod \
+            cpio \
+            python3 \
+            android-sdk-libsparse-utils \
+            lz4 \
+            sudo \
+            && sudo rm -rf /var/lib/apt/lists/*
+
+      - name: Run build scripts
+        run: |
+          chmod +x build.sh build/prepare-fake-ota.sh build/system-image-from-ota.sh make-installer-images.sh
+          ./build.sh
+          ./build/prepare-fake-ota.sh out/device_garnet_usrmerge.tar.xz ota
+          sudo ./build/system-image-from-ota.sh ota/ubuntu_command images
+          ./make-installer-images.sh
