@@ -1,0 +1,60 @@
+garnet:
+  CollapsedPanelHeight: 116
+  DisplayCutoutsCollapsed:
+    - 0 0 40 116
+    - 563 0 94 116
+    - 1180 0 40 116
+  DisplayCutoutsCollapsedLight:
+    - 0 0 40 116
+    - 579 0 63 116
+    - 1180 0 40 116
+  DisplayCutoutsExpanded:
+    - 0 0 40 147
+    - 579 0 63 147
+    - 1180 0 40 147
+
+
+garnetp:
+  CollapsedPanelHeight: 116
+  DisplayCutoutsCollapsed:
+    - 0 0 40 116
+    - 563 0 94 116
+    - 1180 0 40 116
+  DisplayCutoutsCollapsedLight:
+    - 0 0 40 116
+    - 579 0 63 116
+    - 1180 0 40 116
+  DisplayCutoutsExpanded:
+    - 0 0 40 147
+    - 579 0 63 147
+    - 1180 0 40 147
+
+XIG05:
+  CollapsedPanelHeight: 116
+  DisplayCutoutsCollapsed:
+    - 0 0 40 116
+    - 563 0 94 116
+    - 1180 0 40 116
+  DisplayCutoutsCollapsedLight:
+    - 0 0 40 116
+    - 579 0 63 116
+    - 1180 0 40 116
+  DisplayCutoutsExpanded:
+    - 0 0 40 147
+    - 579 0 63 147
+    - 1180 0 40 147
+
+xig05:
+  CollapsedPanelHeight: 116
+  DisplayCutoutsCollapsed:
+    - 0 0 40 116
+    - 563 0 94 116
+    - 1180 0 40 116
+  DisplayCutoutsCollapsedLight:
+    - 0 0 40 116
+    - 579 0 63 116
+    - 1180 0 40 116
+  DisplayCutoutsExpanded:
+    - 0 0 40 147
+    - 579 0 63 147
+    - 1180 0 40 147
