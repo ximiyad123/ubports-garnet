@@ -1,4 +1,4 @@
-name: Build Ubuntu Touch Image
+name: Build System Image
 
 on:
   push:
@@ -16,12 +16,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
-
-      - name: Print current directory workspace
-        run: |
-          echo "Working directory is: $GITHUB_WORKSPACE"
-          pwd
-          ls -la
 
       - name: Install dependencies
         run: |
@@ -47,7 +41,10 @@ jobs:
 
       - name: Run build scripts
         run: |
-          # Grant executable permissions to all script files in the repository
+          # Ensure we are strictly in the repository root directory
+          cd "$GITHUB_WORKSPACE"
+
+          # Grant execution rights to all shell scripts in the workspace
           find . -type f -name "*.sh" -exec chmod +x {} +
 
           # Run build process
@@ -55,3 +52,11 @@ jobs:
           ./build/prepare-fake-ota.sh out/device_garnet_usrmerge.tar.xz ota
           sudo ./build/system-image-from-ota.sh ota/ubuntu_command images
           ./make-installer-images.sh
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ubuntu-touch-garnet-images
+          path: |
+            out/
+            images/
