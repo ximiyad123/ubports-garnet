@@ -1,5 +1,5 @@
 out/
-images/
+/images/
 ota/
 workdir/
 build/
