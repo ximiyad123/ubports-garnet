@@ -163,9 +163,15 @@ mount_android_partitions() {
 
 	tell_kmsg "checking fstab $fstab for additional mount points"
 
-	# On systems with A/B partition layout, current slot is provided via cmdline parameter.
-	ab_slot_suffix=$(grep -o 'androidboot\.slot_suffix=..' /proc/cmdline | tail -1 | cut -d "=" -f2)
-	[ ! -z "$ab_slot_suffix" ] && tell_kmsg "A/B slot system detected! Slot suffix is $ab_slot_suffix"
+	# On GKI 2.0+ devices, the current slot is provided via bootconfig.
+	if [ -f /proc/bootconfig ]; then
+		ab_slot_suffix=$(sed -n 's/^androidboot\.slot_suffix = "\(.*\)"/\1/p' /proc/bootconfig | tail -1)
+	else
+		# Fallback for older Android versions.
+		ab_slot_suffix=$(grep -o 'androidboot\.slot_suffix=..' /proc/cmdline | tail -1 | cut -d "=" -f2)
+	fi
+
+	[ -n "$ab_slot_suffix" ] && tell_kmsg "A/B slot system detected! Slot suffix is $ab_slot_suffix"
 
 	cat ${fstab} | while read line; do
 		set -- $line
@@ -186,7 +192,7 @@ mount_android_partitions() {
 		# In case fstab provides /dev/mmcblk0p* lines
 		path="/dev/$label"
 		for dir in by-partlabel by-name by-label by-path by-uuid by-partuuid by-id; do
-			# On A/B systems not all of the partitions are duplicated, so we have to check with and without suffix
+			# On A/B systems not all partitions are duplicated, so check with and without suffix.
 			if [ -e "/dev/disk/$dir/$label$ab_slot_suffix" ]; then
 				path="/dev/disk/$dir/$label$ab_slot_suffix"
 				break
@@ -203,7 +209,7 @@ mount_android_partitions() {
 		mount $path ${mount_root}/$2 -t $3 -o $4
 	done
 
-	# Provide a bind mount from /cache to /userdata/cache on systems without a dedicated cache partition
+	# Provide a bind mount from /cache to /userdata/cache on systems without a dedicated cache partition.
 	if [ ! -e ${mount_root}/cache ] || ! grep -q "${mount_root}/cache" /proc/mounts; then
 		if [ ! -d ${real_userdata}/cache ]; then
 			mkdir ${real_userdata}/cache
@@ -212,7 +218,7 @@ mount_android_partitions() {
 		mount -o bind ${real_userdata}/cache ${mount_root}/cache
 	fi
 
-	# Create an appropriate symlink for vendor files
+	# Create an appropriate symlink for vendor files.
 	if [ ! -e ${mount_root}/vendor ]; then
 		ln -sf system/vendor ${mount_root}/vendor
 	fi
@@ -501,30 +507,24 @@ mountroot() {
 		[ -n "$path" ] && break
 	done
 
-	# On systems with A/B partition layout, current slot is provided via cmdline parameter.
-	ab_slot_suffix=$(grep -o 'androidboot\.slot_suffix=..' /proc/cmdline | tail -1 | cut -d "=" -f2)
-	if [ -z "$path" ] && [ ! -z "$ab_slot_suffix" ] ; then
+	# On GKI 2.0+ devices, the current slot is provided via bootconfig.
+	if [ -f /proc/bootconfig ]; then
+		ab_slot_suffix=$(sed -n 's/^androidboot\.slot_suffix = "\(.*\)"/\1/p' /proc/bootconfig | tail -1)
+	else
+		ab_slot_suffix=$(grep -o 'androidboot\.slot_suffix=..' /proc/cmdline | tail -1 | cut -d "=" -f2)
+	fi
+
+	if [ -z "$path" ] && [ -n "$ab_slot_suffix" ]; then
 		tell_kmsg "Searching for A/B data partition on slot $ab_slot_suffix."
 
 		for partname in $partlist; do
 			part=$(find /dev -name "$partname$ab_slot_suffix" | tail -1)
 			[ -z "$part" ] && continue
-			path=$(readlink -f $part)
+			path=$(readlink -f "$part")
 			[ -n "$path" ] && break
 		done
 	fi
-
-	# override with a possible cmdline parameter
-	if grep -q datapart= /proc/cmdline; then
-		for x in $(cat /proc/cmdline); do
-			case ${x} in
-			datapart=*)
-				path=${x#*=}
-				;;
-			esac
-		done
-	fi
-
+	
 	if [ -z "$path" ]; then
 		halium_panic "Couldn't find data partition."
 	fi
