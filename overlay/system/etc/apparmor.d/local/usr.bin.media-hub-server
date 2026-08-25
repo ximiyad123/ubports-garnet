@@ -1,0 +1,4 @@
+/dev/dma_heap/system rw,
+/dev/dma_heap/qcom,system rw,
+/dev/dma_heap/qcom,display rw,
+/sys/devices/soc0/soc_id r,
