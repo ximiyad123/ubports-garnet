@@ -85,12 +85,10 @@ else
     echo "Warning: Unable to detect active slot suffix. Proceeding without slot suffix..."
 fi
 
-# Free product logical partition and erase vendor/mi_ext on the CURRENT slot
+# Wipe super
 echo ""
-echo "Freeing product$SLOT_SUFFIX and mi_ext$SLOT_SUFFIX from super, and erasing vendor$SLOT_SUFFIX..."
-fastboot delete-logical-partition "product$SLOT_SUFFIX" 2>/dev/null || true
-fastboot erase "vendor$SLOT_SUFFIX" 2>/dev/null || true
-fastboot erase "mi_ext$SLOT_SUFFIX" 2>/dev/null || true
+echo "Erasing super..."
+fastboot wipe-super ./images/super_empty.img
 
 # Wipe userdata and metadata via bootloader
 echo ""
