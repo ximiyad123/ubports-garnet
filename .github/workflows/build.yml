@@ -1,10 +1,6 @@
 name: Build System Image
 
 on:
-  push:
-    branches:
-      - main
-      - ubports-garnet
   workflow_dispatch:
 
 jobs:
