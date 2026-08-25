@@ -117,10 +117,8 @@ if defined CURRENT_SLOT (
 ) 
  
 echo. 
-echo Freeing product!SLOT_SUFFIX! and mi_ext!SLOT_SUFFIX! from super, and erasing vendor!SLOT_SUFFIX!... 
-"%FASTBOOT%" delete-logical-partition product!SLOT_SUFFIX! >nul 2>&1 
-"%FASTBOOT%" erase vendor!SLOT_SUFFIX! >nul 2>&1 
-"%FASTBOOT%" erase mi_ext!SLOT_SUFFIX! >nul 2>&1 
+echo Erasing super...
+"%FASTBOOT% wipe-super .\images\super_empty.img
 
 
  
