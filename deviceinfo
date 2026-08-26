@@ -14,10 +14,10 @@ deviceinfo_flash_pagesize="4096"
 deviceinfo_bootimg_qcdt="false"
 deviceinfo_bootimg_header_version="4"
 # Needed for AVB footer, fine as long as it is less or the same
-deviceinfo_bootimg_partition_size="33554432"
+deviceinfo_bootimg_partition_size="$((192*$((2**20))))"
 deviceinfo_bootimg_os_version="12"
 deviceinfo_bootimg_os_patch_level="2023-05"
 deviceinfo_rootfs_image_sector_size="4096"
 deviceinfo_halium_version="12"
 deviceinfo_ubuntu_touch_release="24.04-2.x"
-
+deviceinfo_recovery_ramdisk_compression="lz4"
