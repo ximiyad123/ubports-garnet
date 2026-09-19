@@ -24,10 +24,32 @@ cp -r "$INSTALL_SCRIPTS"/* "$TARGET/"
 echo "I: Copying image files..."
 for img in "$BUILD_DIR"/images/*; do
     [ -f "$img" ] || continue
+
     case "$img" in
-        *boot-lz4.img|*rootfs.img) continue ;;
-        *) cp "$img" "$TARGET/images/" ;;
+        *boot-lz4.img|*rootfs.img)
+            continue
+            ;;
+        *)
+            cp "$img" "$TARGET/images/"
+            ;;
     esac
+done
+
+echo "I: Generating SHA-256 checksums..."
+
+cd "$TARGET/images"
+
+for img in *.img; do
+    [ -f "$img" ] || continue
+
+    case "$img" in
+        boot-lz4.img|rootfs.img)
+            continue
+            ;;
+    esac
+
+    echo "I: Checking $img..."
+    sha256sum "$img" > "$img.sha256sum"
 done
 
 echo "I: Repacking image files..."
