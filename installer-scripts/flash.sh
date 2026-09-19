@@ -94,6 +94,10 @@ verify_sha256() {
     local file="$1"
     local checksum_file="$2"
 
+    local expected
+    local actual
+    local hash_output
+
     if [ ! -f "$file" ]; then
         echo "Error: Missing file:"
         echo "  $file"
@@ -108,7 +112,42 @@ verify_sha256() {
 
     echo "Verifying $(basename "$file")..."
 
-    if sha256sum -c "$checksum_file"; then
+    # Read the expected checksum directly from the checksum file.
+    expected="$(awk 'NF {print $1; exit}' "$checksum_file")"
+
+    if [ -z "$expected" ]; then
+        echo ""
+        echo "Error: Checksum file is empty or invalid:"
+        echo "  $checksum_file"
+        exit 1
+    fi
+
+    # Calculate the checksum using the ACTUAL image path.
+    #
+    # Do not use:
+    #   sha256sum -c "$checksum_file"
+    #
+    # because the checksum file normally contains only:
+    #   filename.img
+    #
+    # and the image itself is inside $IMAGE_DIR.
+    if ! hash_output="$(sha256sum "$file" 2>&1)"; then
+        echo ""
+        echo "=========================================="
+        echo " ERROR: SHA-256 calculation failed"
+        echo "=========================================="
+        echo ""
+        echo "File:"
+        echo "  $file"
+        echo ""
+        echo "$hash_output"
+        echo ""
+        exit 1
+    fi
+
+    actual="${hash_output%% *}"
+
+    if [ "$actual" = "$expected" ]; then
         echo "SHA-256 OK."
         echo ""
         return 0
@@ -122,9 +161,6 @@ verify_sha256() {
     echo "File:"
     echo "  $file"
     echo ""
-
-    expected="$(awk 'NF {print $1; exit}' "$checksum_file")"
-    actual="$(sha256sum "$file" | awk '{print $1}')"
 
     echo "Expected:"
     echo "  $expected"
@@ -156,9 +192,22 @@ verify_sha256() {
 
 verify_vendor_sha256() {
     local actual
+    local hash_output
 
     while true; do
-        actual="$(sha256sum "$VENDOR_IMG" | awk '{print $1}')"
+
+        if ! hash_output="$(sha256sum "$VENDOR_IMG" 2>&1)"; then
+            echo ""
+            echo "=========================================="
+            echo " ERROR: Could not calculate vendor SHA-256"
+            echo "=========================================="
+            echo ""
+            echo "$hash_output"
+            echo ""
+            exit 1
+        fi
+
+        actual="${hash_output%% *}"
 
         if [ "$actual" = "$VENDOR_SHA256" ]; then
             echo "Vendor SHA-256 OK."
@@ -466,7 +515,7 @@ is_size_error() {
     local output="$1"
 
     echo "$output" | grep -qiE \
-        'partition.*(full|too large|size)|'\
+        'partition.*(full|too large)|'\
         'not enough space|'\
         'insufficient space|'\
         'size.*too large|'\
@@ -508,8 +557,6 @@ flash_partition() {
         return 0
     fi
 
-    # Only ask about wiping super if the error actually
-    # resembles a dynamic partition capacity problem.
     if ! is_size_error "$output"; then
         echo ""
         echo "Failed to flash $image."
@@ -746,7 +793,6 @@ if [ "$FRESH_INSTALL" = true ]; then
     echo "=========================================="
     echo ""
 
-    # Keep the slot that was active before install.
     echo "Keeping previously active slot: $CURRENT_SLOT"
 
     fastboot set_active "$CURRENT_SLOT"
@@ -819,11 +865,7 @@ else
 
     # --------------------------------------
     # Step 2
-    # IMPORTANT:
     # Do NOT switch active slot yet.
-    #
-    # Recovery is entered while the current
-    # slot remains active.
     # --------------------------------------
 
     echo "=========================================="
@@ -855,8 +897,6 @@ else
     # Step 4
     # Delete ONLY target-slot logical
     # partitions.
-    #
-    # CURRENT SLOT IS LEFT ALONE.
     # --------------------------------------
 
     echo "=========================================="
