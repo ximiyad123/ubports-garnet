@@ -2,6 +2,10 @@
 
 Halium-based Ubuntu Touch port for Xiaomi Redmi Note 13 Pro 5G / Poco X6 5G (`garnet`).
 
+## Support
+https://t.me/garnetlinux
+
+
 ## Device Status
 
 | Feature | Status | Notes |
