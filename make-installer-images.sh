@@ -49,7 +49,7 @@ for img in *.img; do
     esac
 
     echo "I: Checking $img..."
-    sha256sum "$img" > "$img.sha256sum"
+    sha256sum "$img" > "${img%.img}.sha256"
 done
 
 echo "I: Repacking image files..."
