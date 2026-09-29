@@ -330,13 +330,42 @@ ensure_fastbootd() {
     echo "Now in fastbootd."
 }
 
+ensure_bootloader() {
+    local userspace
+
+    userspace="$(get_userspace)"
+
+    if [ "$userspace" != "yes" ]; then
+        echo "Device is already in bootloader."
+        return 0
+    fi
+
+    echo "Device is in fastbootd."
+    echo "Rebooting into bootloader..."
+
+    fastboot reboot bootloader
+
+    wait_for_fastboot
+
+    userspace="$(get_userspace)"
+
+    if [ "$userspace" = "yes" ]; then
+        echo "Error: Still in fastbootd after reboot."
+        exit 1
+    fi
+
+    echo "Now in bootloader."
+}
+
 # ==========================================
 # Device detection
 # ==========================================
 
 echo "Checking fastboot mode..."
 
-ensure_fastbootd
+# For wipe-super and -w, we need to be in bootloader
+echo "Ensuring bootloader mode for wipe operations..."
+ensure_bootloader
 
 echo ""
 
@@ -683,10 +712,24 @@ if [ "$FRESH_INSTALL" = true ]; then
     echo ""
 
     # --------------------------------------
-    # Wipe super
+    # Wipe super (in bootloader)
     # --------------------------------------
 
     wipe_super
+
+    echo ""
+
+    # --------------------------------------
+    # Switch to fastbootd for flashing
+    # --------------------------------------
+
+    echo "Switching to fastbootd for flashing..."
+
+    fastboot reboot fastboot
+
+    wait_for_fastboot
+
+    ensure_fastbootd
 
     echo ""
 
@@ -712,6 +755,13 @@ if [ "$FRESH_INSTALL" = true ]; then
             echo "Wiping userdata and metadata..."
 
             fastboot -w
+
+            echo ""
+            echo "Rebooting back to bootloader..."
+
+            fastboot reboot bootloader
+
+            wait_for_fastboot
 
             echo ""
             echo "Rebooting back into fastbootd..."

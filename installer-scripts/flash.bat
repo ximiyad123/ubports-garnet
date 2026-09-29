@@ -94,27 +94,30 @@ if errorlevel 1 (
 
 echo Checking fastboot mode...
 
+:: For wipe-super and -w, we need to be in bootloader
+echo Ensuring bootloader mode for wipe operations...
+
 call :GET_USERSPACE
 
 if /I "!IS_USERSPACE!"=="yes" (
-    echo Device is already in fastbootd.
-) else (
-    echo Device is in bootloader.
-    echo Rebooting into fastbootd...
+    echo Device is in fastbootd.
+    echo Rebooting into bootloader...
 
-    "%FASTBOOT%" reboot fastboot
+    "%FASTBOOT%" reboot bootloader
 
     call :WAIT_FOR_FASTBOOT
 
     call :GET_USERSPACE
 
     if /I "!IS_USERSPACE!"=="yes" (
-        echo Now in fastbootd.
-    ) else (
-        echo Error: Could not confirm fastbootd mode.
+        echo Error: Still in fastbootd after reboot.
         pause
         exit /b 1
     )
+
+    echo Now in bootloader.
+) else (
+    echo Device is already in bootloader.
 )
 
 echo.
@@ -526,7 +529,7 @@ if /I not "!SUPERCHOICE!"=="Y" (
 echo.
 
 :: ------------------------------------------------------------
-:: Wipe super
+:: Wipe super (in bootloader)
 :: ------------------------------------------------------------
 
 echo ==========================================
@@ -543,6 +546,25 @@ if errorlevel 1 (
 )
 
 echo super wiped successfully.
+echo.
+
+:: ------------------------------------------------------------
+:: Switch to fastbootd for flashing
+:: ------------------------------------------------------------
+
+echo Switching to fastbootd for flashing...
+
+"%FASTBOOT%" reboot fastboot
+
+call :WAIT_FOR_FASTBOOT
+
+call :ENSURE_FASTBOOTD
+
+if errorlevel 1 (
+    pause
+    exit /b 1
+)
+
 echo.
 
 :: ------------------------------------------------------------
@@ -572,6 +594,13 @@ if /I "!WIPECHOICE!"=="Y" (
         pause
         exit /b 1
     )
+
+    echo.
+    echo Rebooting back to bootloader...
+
+    "%FASTBOOT%" reboot bootloader
+
+    call :WAIT_FOR_FASTBOOT
 
     echo.
     echo Rebooting back into fastbootd...
