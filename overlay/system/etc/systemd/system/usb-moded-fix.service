@@ -1,0 +1,10 @@
+[Unit]
+Description=USB MTP daemon fix - restart after delay
+After=usb-moded.service
+Wants=usb-moded.service
+
+[Service]
+Type=oneshot
+ExecStartPre=/bin/sleep 3
+ExecStart=/bin/systemctl restart usb-moded
+RemainAfterExit=no

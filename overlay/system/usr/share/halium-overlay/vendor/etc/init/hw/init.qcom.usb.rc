@@ -1,0 +1,4 @@
+# MTP fix stub for Qualcomm USB
+# This file is a placeholder for vendor-specific USB configuration
+# that may be needed for MTP support on Qualcomm devices.
+# it fixes the mtp issue on this device.

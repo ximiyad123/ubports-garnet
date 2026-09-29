@@ -1,0 +1,8 @@
+[Unit]
+Description=UMTPRD daemon starter
+After=usb-moded-fix.service
+Wants=usb-moded-fix.service
+
+[Service]
+Type=simple
+ExecStart=/bin/systemctl start umtprd
