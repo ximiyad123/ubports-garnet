@@ -4,9 +4,9 @@ After=usb-moded-fix.service
 Wants=usb-moded-fix.service
 
 [Service]
-Type=simple
-ExecStartPre=/bin/sleep 5
+Type=oneshot
 ExecStart=/bin/systemctl start umtprd
+RemainAfterExit=yes
 
 [Install]
 WantedBy=multi-user.target
