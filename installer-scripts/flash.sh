@@ -413,7 +413,7 @@ echo ""
 
 if [ "$FRESH_INSTALL" = true ]; then
 
-    echo "Fresh installation will flash BOTH slots."
+    echo "Fresh installation will flash the active slot only."
     echo ""
 
 else
@@ -515,6 +515,8 @@ is_size_error() {
     local output="$1"
 
     echo "$output" | grep -qiE \
+        'FAILED.*remote:.*space|'\
+        'remote:.*(space|size|full)|'\
         'partition.*(full|too large)|'\
         'not enough space|'\
         'insufficient space|'\
@@ -523,7 +525,10 @@ is_size_error() {
         'file.*too large|'\
         'super.*(full|space)|'\
         'logical partition.*(full|space)|'\
-        'no space left'
+        'no space left|'\
+        '空间不足|'\
+        'logical.*exceeds.*container|'\
+        'opposing.*aosp'
 }
 
 # ==========================================
@@ -728,74 +733,44 @@ if [ "$FRESH_INSTALL" = true ]; then
     esac
 
     # --------------------------------------
-    # Flash slot A
+    # Flash active slot only
     # --------------------------------------
 
+    ACTIVE_SUFFIX="_$CURRENT_SLOT"
+
     echo "=========================================="
-    echo " Flashing slot A"
+    echo " Flashing slot $CURRENT_SLOT (active)"
     echo "=========================================="
     echo ""
 
     flash_image "dtbo" \
-        "dtbo.img" "_a" "false"
+        "dtbo.img" "$ACTIVE_SUFFIX" "false"
 
     flash_image "boot" \
-        "boot.img" "_a" "true"
+        "boot.img" "$ACTIVE_SUFFIX" "true"
 
     flash_image "odm" \
-        "odm.img" "_a" "true"
+        "odm.img" "$ACTIVE_SUFFIX" "true"
 
     flash_image "vendor_boot" \
-        "vendor_boot.img" "_a" "false"
+        "vendor_boot.img" "$ACTIVE_SUFFIX" "false"
 
     flash_image "vendor_dlkm" \
-        "vendor_dlkm.img" "_a" "false"
+        "vendor_dlkm.img" "$ACTIVE_SUFFIX" "false"
 
     flash_image "vendor" \
-        "vendor.img" "_a" "true"
+        "vendor.img" "$ACTIVE_SUFFIX" "true"
 
     flash_image "system" \
-        "system.img" "_a" "true"
-
-    # --------------------------------------
-    # Flash slot B
-    # --------------------------------------
-
-    echo "=========================================="
-    echo " Flashing slot B"
-    echo "=========================================="
-    echo ""
-
-    flash_image "dtbo" \
-        "dtbo.img" "_b" "false"
-
-    flash_image "boot" \
-        "boot.img" "_b" "true"
-
-    flash_image "odm" \
-        "odm.img" "_b" "true"
-
-    flash_image "vendor_boot" \
-        "vendor_boot.img" "_b" "false"
-
-    flash_image "vendor_dlkm" \
-        "vendor_dlkm.img" "_b" "false"
-
-    flash_image "vendor" \
-        "vendor.img" "_b" "true"
-
-    flash_image "system" \
-        "system.img" "_b" "true"
+        "system.img" "$ACTIVE_SUFFIX" "true"
 
     echo ""
     echo "=========================================="
-    echo " Both slots have been installed."
+    echo " Active slot $CURRENT_SLOT has been installed"
     echo "=========================================="
     echo ""
 
-    echo "Keeping previously active slot: $CURRENT_SLOT"
-
-    fastboot set_active "$CURRENT_SLOT"
+    echo "Keeping active slot: $CURRENT_SLOT"
 
 # ==========================================
 # UPDATE
@@ -912,22 +887,27 @@ else
     echo "  $TARGET_SLOT"
     echo ""
 
-    echo "The following target-slot logical"
-    echo "partitions may be removed:"
+    echo "Keeping:"
+    echo "  system_$CURRENT_SLOT"
+    echo "  vendor_$CURRENT_SLOT"
+    echo "  odm_$CURRENT_SLOT"
+    echo ""
+
+    echo "Removing target logical partitions:"
     echo ""
     echo "  system_$TARGET_SLOT"
-    echo "  vendor_$TARGET_SLOT"
-    echo "  odm_$TARGET_SLOT"
+    fastboot delete-logical-partition \
+        "system_$TARGET_SLOT"
+
     echo ""
-
+    echo "  vendor_$TARGET_SLOT"
     fastboot delete-logical-partition \
-        "system_$TARGET_SLOT" || true
+        "vendor_$TARGET_SLOT"
 
+    echo ""
+    echo "  odm_$TARGET_SLOT"
     fastboot delete-logical-partition \
-        "vendor_$TARGET_SLOT" || true
-
-    fastboot delete-logical-partition \
-        "odm_$TARGET_SLOT" || true
+        "odm_$TARGET_SLOT"
 
     echo ""
 
@@ -969,9 +949,8 @@ else
     echo "=========================================="
     echo ""
 
-    flash_partition \
-        "boot_$TARGET_SLOT" \
-        "$IMAGE_DIR/boot.img"
+    flash_image "boot" \
+        "boot.img" "$TARGET_SUFFIX" "true"
 
     echo ""
 

@@ -214,7 +214,7 @@ echo Current slot: !CURRENT_SLOT!
 echo.
 
 if /I "!FRESH_INSTALL!"=="true" (
-    echo Fresh installation will flash BOTH slots.
+    echo Fresh installation will flash the active slot only.
 ) else (
     echo Update target slot: !TARGET_SLOT!
 )
@@ -595,79 +595,44 @@ if /I "!WIPECHOICE!"=="Y" (
 )
 
 :: ------------------------------------------------------------
-:: Slot A
+:: Flash active slot only
 :: ------------------------------------------------------------
 
-echo ==========================================
-echo  Flashing slot A
-echo ==========================================
-echo.
-
-call :FLASH_IMAGE "dtbo" "dtbo.img" "_a" "false"
-if errorlevel 1 exit /b 1
-
-call :FLASH_IMAGE "boot" "boot.img" "_a" "true"
-if errorlevel 1 exit /b 1
-
-call :FLASH_IMAGE "odm" "odm.img" "_a" "true"
-if errorlevel 1 exit /b 1
-
-call :FLASH_IMAGE "vendor_boot" "vendor_boot.img" "_a" "false"
-if errorlevel 1 exit /b 1
-
-call :FLASH_IMAGE "vendor_dlkm" "vendor_dlkm.img" "_a" "false"
-if errorlevel 1 exit /b 1
-
-call :FLASH_IMAGE "vendor" "vendor.img" "_a" "true"
-if errorlevel 1 exit /b 1
-
-call :FLASH_IMAGE "system" "system.img" "_a" "true"
-if errorlevel 1 exit /b 1
-
-:: ------------------------------------------------------------
-:: Slot B
-:: ------------------------------------------------------------
+set "ACTIVE_SUFFIX=_!CURRENT_SLOT!"
 
 echo ==========================================
-echo  Flashing slot B
+echo  Flashing slot !CURRENT_SLOT! ^(active^)
 echo ==========================================
 echo.
 
-call :FLASH_IMAGE "dtbo" "dtbo.img" "_b" "false"
+call :FLASH_IMAGE "dtbo" "dtbo.img" "!ACTIVE_SUFFIX!" "false"
 if errorlevel 1 exit /b 1
 
-call :FLASH_IMAGE "boot" "boot.img" "_b" "true"
+call :FLASH_IMAGE "boot" "boot.img" "!ACTIVE_SUFFIX!" "true"
 if errorlevel 1 exit /b 1
 
-call :FLASH_IMAGE "odm" "odm.img" "_b" "true"
+call :FLASH_IMAGE "odm" "odm.img" "!ACTIVE_SUFFIX!" "true"
 if errorlevel 1 exit /b 1
 
-call :FLASH_IMAGE "vendor_boot" "vendor_boot.img" "_b" "false"
+call :FLASH_IMAGE "vendor_boot" "vendor_boot.img" "!ACTIVE_SUFFIX!" "false"
 if errorlevel 1 exit /b 1
 
-call :FLASH_IMAGE "vendor_dlkm" "vendor_dlkm.img" "_b" "false"
+call :FLASH_IMAGE "vendor_dlkm" "vendor_dlkm.img" "!ACTIVE_SUFFIX!" "false"
 if errorlevel 1 exit /b 1
 
-call :FLASH_IMAGE "vendor" "vendor.img" "_b" "true"
+call :FLASH_IMAGE "vendor" "vendor.img" "!ACTIVE_SUFFIX!" "true"
 if errorlevel 1 exit /b 1
 
-call :FLASH_IMAGE "system" "system.img" "_b" "true"
+call :FLASH_IMAGE "system" "system.img" "!ACTIVE_SUFFIX!" "true"
 if errorlevel 1 exit /b 1
 
 echo.
 echo ==========================================
-echo  Both slots have been installed
+echo  Active slot !CURRENT_SLOT! has been installed
 echo ==========================================
 echo.
 
-echo Keeping previously active slot:
-echo   !CURRENT_SLOT!
-
-"%FASTBOOT%" set_active "!CURRENT_SLOT!"
-
-if errorlevel 1 (
-    echo Warning: Could not restore previous active slot.
-)
+echo Keeping active slot: !CURRENT_SLOT!
 
 goto FINISH
 
@@ -958,20 +923,8 @@ exit /b 1
 
 set "SIZE_ERROR=0"
 
-findstr /I /R ^
-    /C:"partition.*full" ^
-    /C:"partition.*too large" ^
-    /C:"partition.*size" ^
-    /C:"not enough space" ^
-    /C:"insufficient space" ^
-    /C:"size.*too large" ^
-    /C:"image.*too large" ^
-    /C:"file.*too large" ^
-    /C:"super.*full" ^
-    /C:"super.*space" ^
-    /C:"logical partition.*space" ^
-    /C:"no space left" ^
-    "%FLASHOUT%" >nul
+:: Check fastboot output for space/size related errors
+findstr /I /R /C:"FAILED.*remote.*space" /C:"remote.*space" /C:"remote.*size" /C:"remote.*full" /C:"partition.*full" /C:"partition.*too large" /C:"partition.*size" /C:"not enough space" /C:"insufficient space" /C:"size.*too large" /C:"image.*too large" /C:"file.*too large" /C:"super.*full" /C:"super.*space" /C:"logical partition.*space" /C:"logical.*exceeds.*container" /C:"no space left" /C:"opposing.*aosp" "%FLASHOUT%" >nul
 
 if not errorlevel 1 (
     set "SIZE_ERROR=1"
@@ -1084,7 +1037,8 @@ if "!SIZE_ERROR!"=="0" (
 
 echo.
 echo ==========================================
-echo  Possible dynamic-partition size problem
+echo  Flash failed because of a possible size
+echo  / dynamic-partition capacity problem.
 echo ==========================================
 echo.
 
