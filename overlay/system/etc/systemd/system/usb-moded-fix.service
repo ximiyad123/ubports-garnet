@@ -5,6 +5,9 @@ Wants=usb-moded.service
 
 [Service]
 Type=oneshot
-ExecStartPre=/bin/sleep 3
+ExecStartPre=/bin/sleep 5
 ExecStart=/bin/systemctl restart usb-moded
 RemainAfterExit=no
+
+[Install]
+WantedBy=multi-user.target
