@@ -43,6 +43,7 @@ jobs:
         run: |
           cd "$GITHUB_WORKSPACE"
 
+          # Grant execution rights to all shell scripts
           find . -type f -name "*.sh" -exec chmod +x {} +
 
           ./build.sh
@@ -55,10 +56,32 @@ jobs:
         run: |
           set -e
 
+          # Read Ubuntu Touch release from deviceinfo in repository root
+          UT_RELEASE=$(sed -n \
+            's/^deviceinfo_ubuntu_touch_release="\([^"]*\)"/\1/p' \
+            deviceinfo)
+
+          if [ -z "$UT_RELEASE" ]; then
+            echo "ERROR: deviceinfo_ubuntu_touch_release not found in ./deviceinfo"
+            exit 1
+          fi
+
+          echo "Ubuntu Touch release: $UT_RELEASE"
+
+          # Generate date as DDMMYYYY
+          DATE=$(date '+%d%m%Y')
+
+          # Release title
+          RELEASE_NAME="Ubuntu Touch ${UT_RELEASE} ${DATE}"
+
+          echo "Release name: $RELEASE_NAME"
+
+          # Find the previous release tag
           PREVIOUS_TAG=$(git tag --sort=-creatordate | head -n 1)
 
           echo "Previous release: ${PREVIOUS_TAG:-none}"
 
+          # Generate changelog from commits since the previous release
           if [ -n "$PREVIOUS_TAG" ]; then
             git log "${PREVIOUS_TAG}..HEAD" \
               --pretty=format:'- %s (%h)' \
@@ -69,12 +92,16 @@ jobs:
               --no-merges > changelog.txt
           fi
 
+          # Create release description:
+          # README.md
+          # ---
+          # commits since previous release
           {
             cat README.md
 
             echo
             echo
-            echo "## Changelog"
+            echo "---"
             echo
 
             if [ -s changelog.txt ]; then
@@ -82,17 +109,11 @@ jobs:
             else
               echo "No changes since the previous release."
             fi
-
-            echo
-            echo
-            echo "---"
-            echo
-            echo "Built from commit \`$GITHUB_SHA\`."
           } > release-body.md
 
-          RELEASE_NAME=$(git log -1 --pretty=format:'%s')
-
           echo "release_name=$RELEASE_NAME" >> "$GITHUB_OUTPUT"
+
+          # Unique tag for this build
           echo "tag=build-${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub Release
