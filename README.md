@@ -41,3 +41,5 @@ https://t.me/garnetlinux
 ./build/prepare-fake-ota.sh out/device_garnet_usrmerge.tar.xz ota
 sudo ./build/system-image-from-ota.sh ota/ubuntu_command images
 ./make-installer-images.sh
+```
+
