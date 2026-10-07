@@ -43,3 +43,5 @@ sudo ./build/system-image-from-ota.sh ota/ubuntu_command images
 ./make-installer-images.sh
 ```
 
+## Notes:
+Fastboot/PC only flash and update
