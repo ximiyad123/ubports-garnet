@@ -27,7 +27,6 @@ https://t.me/garnetlinux
 
 ## Known Bugs
 
-* **Dual SIM:** Only SIM slot 1 is functional (single SIM working).
 * **Recovery Mode:** Recovery mode does not work. Attempting to boot into recovery will simply boot into Ubuntu Touch anyway.
 * **Flashlight:** Flashlight from quick settings doesn't work. Download the UTorch app instead.
 * **Telephony:** 5G is broken and audio passthrough in calls
