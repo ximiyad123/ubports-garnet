@@ -98,13 +98,7 @@ jobs:
               --no-merges > changelog.txt
           fi
 
-          # Create release description:
-          #
-          # README.md
-          #
-          # ---
-          #
-          # commits since previous release
+          # Create release description
           {
             cat README.md
 
@@ -122,8 +116,8 @@ jobs:
 
           echo "release_name=$RELEASE_NAME" >> "$GITHUB_OUTPUT"
 
-          # Unique tag for this release
-          echo "tag=build-${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+          # Tag format: ubuntu-touch-DDMMYYYY
+          echo "tag=ubuntu-touch-${DATE}" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
