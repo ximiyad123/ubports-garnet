@@ -31,10 +31,12 @@ case "$action" in
     i|I)
         echo "Selected: Install Ubuntu Touch"
         FRESH_INSTALL=true
+        ALLOW_WIPE=true
         ;;
     u|U)
         echo "Selected: Update Ubuntu Touch"
         FRESH_INSTALL=false
+        ALLOW_WIPE=true
         ;;
     *)
         echo "Invalid choice."
@@ -122,15 +124,8 @@ verify_sha256() {
         exit 1
     fi
 
-    # Calculate the checksum using the ACTUAL image path.
-    #
-    # Do not use:
-    #   sha256sum -c "$checksum_file"
-    #
-    # because the checksum file normally contains only:
-    #   filename.img
-    #
-    # and the image itself is inside $IMAGE_DIR.
+    # Calculate the checksum using the ACTUAL image path
+    # (the checksum file only contains the bare filename).
     if ! hash_output="$(sha256sum "$file" 2>&1)"; then
         echo ""
         echo "=========================================="
@@ -364,7 +359,7 @@ ensure_bootloader() {
 echo "Checking fastboot mode..."
 
 # For wipe-super and -w, we need to be in bootloader
-echo "Ensuring bootloader mode for wipe operations..."
+echo "Ensuring bootloader mode..."
 ensure_bootloader
 
 echo ""
@@ -435,32 +430,6 @@ fi
 
 echo "Current slot: $CURRENT_SLOT"
 echo ""
-
-# ==========================================
-# Determine target slot
-# ==========================================
-
-if [ "$FRESH_INSTALL" = true ]; then
-
-    echo "Fresh installation will flash the active slot only."
-    echo ""
-
-else
-
-    if [ "$CURRENT_SLOT" = "a" ]; then
-        TARGET_SLOT="b"
-    else
-        TARGET_SLOT="a"
-    fi
-
-    CURRENT_SUFFIX="_$CURRENT_SLOT"
-    TARGET_SUFFIX="_$TARGET_SLOT"
-
-    echo "Current slot: $CURRENT_SLOT"
-    echo "Update slot:  $TARGET_SLOT"
-    echo ""
-
-fi
 
 # ==========================================
 # Verify image files
@@ -542,22 +511,9 @@ wipe_super() {
 
 is_size_error() {
     local output="$1"
+    local pattern='remote:.*(space|size|full)|partition.*(full|too large)|not enough space|insufficient space|size.*too large|image.*too large|file.*too large|super.*(full|space)|logical partition.*(full|space)|no space left|空间不足|logical.*exceeds.*container|opposing.*aosp'
 
-    echo "$output" | grep -qiE \
-        'FAILED.*remote:.*space|'\
-        'remote:.*(space|size|full)|'\
-        'partition.*(full|too large)|'\
-        'not enough space|'\
-        'insufficient space|'\
-        'size.*too large|'\
-        'image.*too large|'\
-        'file.*too large|'\
-        'super.*(full|space)|'\
-        'logical partition.*(full|space)|'\
-        'no space left|'\
-        '空间不足|'\
-        'logical.*exceeds.*container|'\
-        'opposing.*aosp'
+    echo "$output" | grep -qiE -- "$pattern"
 }
 
 # ==========================================
@@ -607,6 +563,7 @@ flash_partition() {
     echo ""
     echo "Failed to flash $image."
     echo ""
+
     echo 'If the error is "size too big" or "partition is full",'
     echo "would you like to (W)ipe super or (C)ancel?"
     echo ""
@@ -665,7 +622,10 @@ flash_image() {
 
     if [ -f "$file_path" ]; then
 
-        flash_partition "$target" "$file_path"
+        if ! flash_partition "$target" "$file_path"; then
+            echo "Aborting: flashing $target failed."
+            exit 1
+        fi
 
     else
 
@@ -684,58 +644,85 @@ flash_image() {
 }
 
 # ==========================================
-# FRESH INSTALL
+# INSTALL / UPDATE (same flow)
+#
+# Update = Install, except it:
+#   - flashes stock boot to the active slot first
+#   - never wipes or asks about userdata
 # ==========================================
 
 if [ "$FRESH_INSTALL" = true ]; then
-
     echo "=========================================="
     echo " Fresh Ubuntu Touch Installation"
     echo "=========================================="
+else
+    echo "=========================================="
+    echo " Ubuntu Touch Update"
+    echo "=========================================="
+fi
+echo ""
+
+echo "This will recreate the dynamic partition"
+echo "layout using super_empty.img."
+echo ""
+
+read -p "Continue? (y/N): " superchoice
+
+case "$superchoice" in
+    y|Y)
+        ;;
+    *)
+        echo "Aborting."
+        exit 1
+        ;;
+esac
+
+echo ""
+
+# --------------------------------------
+# Update only: flash stock boot
+# --------------------------------------
+
+if [ "$FRESH_INSTALL" = false ]; then
+
+    echo "=========================================="
+    echo " Flashing stock boot to boot_$CURRENT_SLOT"
+    echo "=========================================="
     echo ""
 
-    echo "This will recreate the dynamic partition"
-    echo "layout using super_empty.img."
-    echo ""
-
-    read -p "Continue? (y/N): " superchoice
-
-    case "$superchoice" in
-        y|Y)
-            ;;
-        *)
-            echo "Aborting."
-            exit 1
-            ;;
-    esac
+    fastboot flash "boot_$CURRENT_SLOT" "$IMAGE_DIR/boot_stock.img"
 
     echo ""
 
-    # --------------------------------------
-    # Wipe super (in bootloader)
-    # --------------------------------------
+fi
 
-    wipe_super
+# --------------------------------------
+# Wipe super (in bootloader)
+# --------------------------------------
 
-    echo ""
+wipe_super
 
-    # --------------------------------------
-    # Switch to fastbootd for flashing
-    # --------------------------------------
+echo ""
 
-    echo "Switching to fastbootd for flashing..."
+# --------------------------------------
+# Switch to fastbootd for flashing
+# --------------------------------------
 
-    fastboot reboot fastboot
+echo "Switching to fastbootd for flashing..."
 
-    wait_for_fastboot
+fastboot reboot fastboot
 
-    ensure_fastbootd
+wait_for_fastboot
 
-    echo ""
+ensure_fastbootd
 
-    # --------------------------------------
-    # Optional userdata wipe
-    # --------------------------------------
+echo ""
+
+# --------------------------------------
+# Optional userdata wipe (install only)
+# --------------------------------------
+
+if [ "$FRESH_INSTALL" = true ]; then
 
     echo "WARNING: This will erase all user data."
     echo ""
@@ -782,258 +769,47 @@ if [ "$FRESH_INSTALL" = true ]; then
             ;;
     esac
 
-    # --------------------------------------
-    # Flash active slot only
-    # --------------------------------------
-
-    ACTIVE_SUFFIX="_$CURRENT_SLOT"
-
-    echo "=========================================="
-    echo " Flashing slot $CURRENT_SLOT (active)"
-    echo "=========================================="
-    echo ""
-
-    flash_image "dtbo" \
-        "dtbo.img" "$ACTIVE_SUFFIX" "false"
-
-    flash_image "boot" \
-        "boot.img" "$ACTIVE_SUFFIX" "true"
-
-    flash_image "odm" \
-        "odm.img" "$ACTIVE_SUFFIX" "true"
-
-    flash_image "vendor_boot" \
-        "vendor_boot.img" "$ACTIVE_SUFFIX" "false"
-
-    flash_image "vendor_dlkm" \
-        "vendor_dlkm.img" "$ACTIVE_SUFFIX" "false"
-
-    flash_image "vendor" \
-        "vendor.img" "$ACTIVE_SUFFIX" "true"
-
-    flash_image "system" \
-        "system.img" "$ACTIVE_SUFFIX" "true"
-
-    echo ""
-    echo "=========================================="
-    echo " Active slot $CURRENT_SLOT has been installed"
-    echo "=========================================="
-    echo ""
-
-    echo "Keeping active slot: $CURRENT_SLOT"
-
-# ==========================================
-# UPDATE
-# ==========================================
-
-else
-
-    echo "=========================================="
-    echo " Ubuntu Touch Update"
-    echo "=========================================="
-    echo ""
-
-    echo "Current slot: $CURRENT_SLOT"
-    echo "Target slot:  $TARGET_SLOT"
-    echo ""
-
-    echo "The current slot's logical partitions"
-    echo "will NOT be deleted."
-    echo ""
-
-    echo "Only the target slot will be modified."
-    echo ""
-
-    echo "Update sequence:"
-    echo ""
-    echo "  1. Flash stock boot to boot_$CURRENT_SLOT"
-    echo "  2. Reboot into recovery"
-    echo "  3. Enter fastbootd"
-    echo "  4. Remove target-slot logical partitions"
-    echo "  5. Flash Ubuntu Touch to target slot"
-    echo "  6. Flash UT boot to target slot"
-    echo "  7. Activate target slot"
-    echo "  8. Reboot"
-    echo ""
-
-    read -p "Continue with update? (y/N): " updatechoice
-
-    case "$updatechoice" in
-        y|Y)
-            ;;
-        *)
-            echo "Aborting."
-            exit 1
-            ;;
-    esac
-
-    echo ""
-
-    # --------------------------------------
-    # Step 1
-    # Temporary stock boot goes to CURRENT slot
-    # --------------------------------------
-
-    echo "=========================================="
-    echo " Step 1: Temporary stock boot"
-    echo "=========================================="
-    echo ""
-
-    echo "Flashing stock boot to:"
-    echo "  boot_$CURRENT_SLOT"
-    echo ""
-
-    fastboot flash "boot_$CURRENT_SLOT" \
-        "$IMAGE_DIR/boot_stock.img"
-
-    echo ""
-
-    # --------------------------------------
-    # Step 2
-    # Do NOT switch active slot yet.
-    # --------------------------------------
-
-    echo "=========================================="
-    echo " Step 2: Rebooting into recovery"
-    echo "=========================================="
-    echo ""
-
-    fastboot reboot recovery
-
-    wait_for_fastboot
-
-    echo ""
-
-    # --------------------------------------
-    # Step 3
-    # Ensure fastbootd
-    # --------------------------------------
-
-    echo "=========================================="
-    echo " Step 3: Entering fastbootd"
-    echo "=========================================="
-    echo ""
-
-    ensure_fastbootd
-
-    echo ""
-
-    # --------------------------------------
-    # Step 4
-    # Delete ONLY target-slot logical
-    # partitions.
-    # --------------------------------------
-
-    echo "=========================================="
-    echo " Step 4: Preparing target slot"
-    echo "=========================================="
-    echo ""
-
-    echo "Current slot:"
-    echo "  $CURRENT_SLOT"
-    echo ""
-
-    echo "Target slot:"
-    echo "  $TARGET_SLOT"
-    echo ""
-
-    echo "Keeping:"
-    echo "  system_$CURRENT_SLOT"
-    echo "  vendor_$CURRENT_SLOT"
-    echo "  odm_$CURRENT_SLOT"
-    echo ""
-
-    echo "Removing target logical partitions:"
-    echo ""
-    echo "  system_$TARGET_SLOT"
-    fastboot delete-logical-partition \
-        "system_$TARGET_SLOT"
-
-    echo ""
-    echo "  vendor_$TARGET_SLOT"
-    fastboot delete-logical-partition \
-        "vendor_$TARGET_SLOT"
-
-    echo ""
-    echo "  odm_$TARGET_SLOT"
-    fastboot delete-logical-partition \
-        "odm_$TARGET_SLOT"
-
-    echo ""
-
-    # --------------------------------------
-    # Step 5
-    # Flash target slot
-    # --------------------------------------
-
-    echo "=========================================="
-    echo " Step 5: Flashing Ubuntu Touch"
-    echo "=========================================="
-    echo ""
-
-    flash_image "dtbo" \
-        "dtbo.img" "$TARGET_SUFFIX" "false"
-
-    flash_image "odm" \
-        "odm.img" "$TARGET_SUFFIX" "true"
-
-    flash_image "vendor_boot" \
-        "vendor_boot.img" "$TARGET_SUFFIX" "false"
-
-    flash_image "vendor_dlkm" \
-        "vendor_dlkm.img" "$TARGET_SUFFIX" "false"
-
-    flash_image "vendor" \
-        "vendor.img" "$TARGET_SUFFIX" "true"
-
-    flash_image "system" \
-        "system.img" "$TARGET_SUFFIX" "true"
-
-    # --------------------------------------
-    # Step 6
-    # Replace stock boot with UT boot
-    # --------------------------------------
-
-    echo "=========================================="
-    echo " Step 6: Installing UT boot"
-    echo "=========================================="
-    echo ""
-
-    flash_image "boot" \
-        "boot.img" "$TARGET_SUFFIX" "true"
-
-    echo ""
-
-    # --------------------------------------
-    # Step 7
-    # Activate target
-    # --------------------------------------
-
-    echo "=========================================="
-    echo " Step 7: Activating target slot"
-    echo "=========================================="
-    echo ""
-
-    echo "Setting active slot to: $TARGET_SLOT"
-
-    fastboot set_active "$TARGET_SLOT"
-
-    echo ""
-
-    echo "=========================================="
-    echo " Update completed successfully"
-    echo "=========================================="
-    echo ""
-
-    echo "Old slot:"
-    echo "  $CURRENT_SLOT"
-    echo ""
-
-    echo "Updated slot:"
-    echo "  $TARGET_SLOT"
-    echo ""
-
 fi
+
+# --------------------------------------
+# Flash active slot only
+# --------------------------------------
+
+ACTIVE_SUFFIX="_$CURRENT_SLOT"
+
+echo "=========================================="
+echo " Flashing slot $CURRENT_SLOT (active)"
+echo "=========================================="
+echo ""
+
+flash_image "dtbo" \
+    "dtbo.img" "$ACTIVE_SUFFIX" "false"
+
+flash_image "boot" \
+    "boot.img" "$ACTIVE_SUFFIX" "true"
+
+flash_image "odm" \
+    "odm.img" "$ACTIVE_SUFFIX" "true"
+
+flash_image "vendor_boot" \
+    "vendor_boot.img" "$ACTIVE_SUFFIX" "false"
+
+flash_image "vendor_dlkm" \
+    "vendor_dlkm.img" "$ACTIVE_SUFFIX" "false"
+
+flash_image "vendor" \
+    "vendor.img" "$ACTIVE_SUFFIX" "true"
+
+flash_image "system" \
+    "system.img" "$ACTIVE_SUFFIX" "true"
+
+echo ""
+echo "=========================================="
+echo " Active slot $CURRENT_SLOT has been installed"
+echo "=========================================="
+echo ""
+
+echo "Keeping active slot: $CURRENT_SLOT"
 
 # ==========================================
 # Finish
