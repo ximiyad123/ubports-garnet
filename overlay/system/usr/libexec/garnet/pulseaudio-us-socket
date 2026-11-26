@@ -1,0 +1,43 @@
+#!/usr/bin/python3
+# Create the ultrasound proximity control socket for the audio HAL, then exec
+# PulseAudio.
+#
+# garnet has no optical proximity sensor for calls; it uses ultrasound
+# (sensors.ultrasoundproximity.so + audio.primary.parrot.so). The audio HAL
+# expects Android init to create /dev/socket/audio_us_socket_0 for the
+# vendor.audio-hal service and pass it via ANDROID_SOCKET_audio_us_socket_0.
+# On Ubuntu Touch the HAL is loaded inside PulseAudio instead, so nothing
+# creates it and the HAL logs "audio_hal_con_thread_start() socket_server_fdr -1".
+# Without that socket the sensor HAL can never enable the ultrasound stream and
+# the proximity sensor reports nothing during calls.
+#
+# On any failure we still exec PulseAudio so audio keeps working.
+import os
+import socket
+import sys
+
+NAME = "audio_us_socket_0"
+PATH = "/dev/socket/" + NAME
+
+
+def log(msg):
+    print("pulseaudio-us-socket: " + msg, file=sys.stderr, flush=True)
+
+
+try:
+    try:
+        os.unlink(PATH)
+    except FileNotFoundError:
+        pass
+    s = socket.socket(socket.AF_UNIX, socket.SOCK_SEQPACKET)
+    s.bind(PATH)
+    os.chmod(PATH, 0o666)
+    fd = s.detach()
+    os.set_inheritable(fd, True)
+    os.environ["ANDROID_SOCKET_" + NAME] = str(fd)
+    # Keep PulseAudio from closing the fd during its startup cleanup.
+    os.environ["PULSE_PASSED_FD"] = str(fd)
+except Exception as e:  # noqa: BLE001
+    log("could not create %s: %s" % (PATH, e))
+
+os.execv(sys.argv[1], sys.argv[1:])
