@@ -1,0 +1,8 @@
+#!/bin/sh
+# Let the phablet user create /dev/socket/audio_us_socket_0 (see
+# pulseaudio-us-socket). Group-writable + sticky, so phablet can add its own
+# socket but cannot remove or replace the ones Android init created.
+i=0
+while [ ! -d /dev/socket ] && [ $i -lt 120 ]; do sleep 0.5; i=$((i+1)); done
+chgrp phablet /dev/socket
+chmod 1775 /dev/socket
