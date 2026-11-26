@@ -1,0 +1,6 @@
+#!/bin/sh -e
+# garnet (SM7435/parrot): qcrild (/vendor/bin/hw/qcrilNrd) registers
+# vendor.qti.hardware.radio.am@1.0::IQcRilAudio/slot1+slot2 at runtime, but the
+# interface is not declared in any /vendor/etc/vintf manifest, so the stock
+# grep-based check fails and audiosystem-passthrough-qti never starts.
+test -x /vendor/bin/hw/qcrilNrd

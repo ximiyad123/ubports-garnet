@@ -45,6 +45,11 @@ load-module module-null-source source_name=source.fake.sco rate=8000 channels=1
 ### Automatically load the Pulseaudio Droid
 load-module module-droid-card-30
 
+### Expose set_parameters() over D-Bus so audiosystem-passthrough-qti can
+### forward IQcRilAudio call_state/vsid from qcrild to the audio HAL.
+### Without this, voice calls have no audio.
+load-module module-droid-hidl
+
 ### Automatically load the trust-store module
 .ifexists module-trust-store.so
 load-module module-trust-store
