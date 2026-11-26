@@ -52,9 +52,11 @@ set /p ACTION="Would you like to (I)nstall Ubuntu Touch or (U)pdate Ubuntu Touch
 
 if /I "%ACTION%"=="I" (
     set "FRESH_INSTALL=true"
+    set "ALLOW_WIPE=true"
     echo Selected: Install Ubuntu Touch
 ) else if /I "%ACTION%"=="U" (
     set "FRESH_INSTALL=false"
+    set "ALLOW_WIPE=true"
     echo Selected: Update Ubuntu Touch
 ) else (
     echo Invalid choice.
@@ -94,8 +96,7 @@ if errorlevel 1 (
 
 echo Checking fastboot mode...
 
-:: For wipe-super and -w, we need to be in bootloader
-echo Ensuring bootloader mode for wipe operations...
+echo Ensuring bootloader mode...
 
 call :GET_USERSPACE
 
@@ -216,11 +217,7 @@ set "TARGET_SUFFIX=_!TARGET_SLOT!"
 echo Current slot: !CURRENT_SLOT!
 echo.
 
-if /I "!FRESH_INSTALL!"=="true" (
-    echo Fresh installation will flash the active slot only.
-) else (
-    echo Update target slot: !TARGET_SLOT!
-)
+echo The active slot will be flashed.
 
 echo.
 
@@ -234,288 +231,60 @@ echo ==========================================
 echo.
 
 call :VERIFY_IMAGE "super_empty.img"
-if errorlevel 1 exit /b 1
+if errorlevel 1 ( pause & exit /b 1 )
 
 call :VERIFY_IMAGE "odm.img"
-if errorlevel 1 exit /b 1
+if errorlevel 1 ( pause & exit /b 1 )
 
 call :VERIFY_IMAGE "system.img"
-if errorlevel 1 exit /b 1
+if errorlevel 1 ( pause & exit /b 1 )
 
 call :VERIFY_IMAGE "boot.img"
-if errorlevel 1 exit /b 1
+if errorlevel 1 ( pause & exit /b 1 )
 
 if /I "!FRESH_INSTALL!"=="false" (
     call :VERIFY_IMAGE "boot_stock.img"
-    if errorlevel 1 exit /b 1
+    if errorlevel 1 ( pause & exit /b 1 )
 )
 
 if exist "%IMAGE_DIR%\dtbo.img" (
     call :VERIFY_IMAGE "dtbo.img"
-    if errorlevel 1 exit /b 1
+    if errorlevel 1 ( pause & exit /b 1 )
 )
 
 if exist "%IMAGE_DIR%\vendor_boot.img" (
     call :VERIFY_IMAGE "vendor_boot.img"
-    if errorlevel 1 exit /b 1
+    if errorlevel 1 ( pause & exit /b 1 )
 )
 
 if exist "%IMAGE_DIR%\vendor_dlkm.img" (
     call :VERIFY_IMAGE "vendor_dlkm.img"
-    if errorlevel 1 exit /b 1
+    if errorlevel 1 ( pause & exit /b 1 )
 )
 
 echo All image checks completed.
 echo.
 
 :: ============================================================
-:: FRESH INSTALL
+:: MAIN FLOW
+:: Install and update run the exact same steps.
+:: Update differs only by:
+::   - flashing the stock boot first, before anything else
+::   - never wiping or asking about userdata
 :: ============================================================
 
-if /I "!FRESH_INSTALL!"=="true" goto FRESH_INSTALL
-
-:: ============================================================
-:: UPDATE
-:: ============================================================
-
 echo ==========================================
-echo  Ubuntu Touch Update
-echo ==========================================
-echo.
-
-echo Current slot: !CURRENT_SLOT!
-echo Target slot:  !TARGET_SLOT!
-echo.
-
-echo The current slot's logical partitions
-echo will NOT be deleted.
-echo.
-
-echo Only the target slot will be modified.
-echo.
-
-echo Update sequence:
-echo.
-echo   1. Flash stock boot to boot_!CURRENT_SLOT!
-echo   2. Reboot into recovery
-echo   3. Enter fastbootd
-echo   4. Remove target-slot logical partitions
-echo   5. Flash Ubuntu Touch to target slot
-echo   6. Flash UT boot to target slot
-echo   7. Activate target slot
-echo   8. Reboot
-echo.
-
-set /p UPDATECHOICE="Continue with update? (Y/N): "
-
-if /I not "!UPDATECHOICE!"=="Y" (
-    echo Aborting.
-    pause
-    exit /b 1
+if /I "!FRESH_INSTALL!"=="true" (
+    echo  Fresh Ubuntu Touch Installation
+) else (
+    echo  Ubuntu Touch Update
 )
-
-echo.
-
-:: ------------------------------------------------------------
-:: Step 1
-:: Temporary stock boot goes to CURRENT slot
-:: ------------------------------------------------------------
-
-echo ==========================================
-echo  Step 1: Temporary stock boot
-echo ==========================================
-echo.
-
-echo Flashing boot_stock.img to:
-echo   boot_!CURRENT_SLOT!
-echo.
-
-"%FASTBOOT%" flash "boot_!CURRENT_SLOT!" "%IMAGE_DIR%\boot_stock.img"
-
-if errorlevel 1 (
-    echo Failed to flash temporary stock boot.
-    pause
-    exit /b 1
-)
-
-echo.
-
-:: ------------------------------------------------------------
-:: Step 2
-:: Do NOT change active slot yet.
-:: Recovery is entered with current slot active.
-:: ------------------------------------------------------------
-
-echo ==========================================
-echo  Step 2: Rebooting into recovery
-echo ==========================================
-echo.
-
-echo Rebooting into recovery...
-
-"%FASTBOOT%" reboot recovery
-
-if errorlevel 1 (
-    echo Failed to reboot into recovery.
-    pause
-    exit /b 1
-)
-
-call :WAIT_FOR_FASTBOOT
-
-echo.
-
-:: ------------------------------------------------------------
-:: Step 3
-:: Ensure fastbootd
-:: ------------------------------------------------------------
-
-echo ==========================================
-echo  Step 3: Entering fastbootd
-echo ==========================================
-echo.
-
-call :ENSURE_FASTBOOTD
-
-if errorlevel 1 (
-    pause
-    exit /b 1
-)
-
-echo.
-
-:: ------------------------------------------------------------
-:: Step 4
-:: Delete ONLY target-slot logical partitions
-:: ------------------------------------------------------------
-
-echo ==========================================
-echo  Step 4: Preparing target slot
-echo ==========================================
-echo.
-
-echo Current slot:
-echo   !CURRENT_SLOT!
-echo.
-
-echo Target slot:
-echo   !TARGET_SLOT!
-echo.
-
-echo Keeping:
-echo   system_!CURRENT_SLOT!
-echo   vendor_!CURRENT_SLOT!
-echo   odm_!CURRENT_SLOT!
-echo.
-
-echo Removing target logical partitions:
-
-echo.
-echo   system_!TARGET_SLOT!
-"%FASTBOOT%" delete-logical-partition "system_!TARGET_SLOT!"
-
-echo.
-echo   vendor_!TARGET_SLOT!
-"%FASTBOOT%" delete-logical-partition "vendor_!TARGET_SLOT!"
-
-echo.
-echo   odm_!TARGET_SLOT!
-"%FASTBOOT%" delete-logical-partition "odm_!TARGET_SLOT!"
-
-echo.
-
-:: ------------------------------------------------------------
-:: Step 5
-:: Flash target slot
-:: ------------------------------------------------------------
-
-echo ==========================================
-echo  Step 5: Flashing Ubuntu Touch
-echo ==========================================
-echo.
-
-call :FLASH_IMAGE "dtbo" "dtbo.img" "!TARGET_SUFFIX!" "false"
-if errorlevel 1 exit /b 1
-
-call :FLASH_IMAGE "odm" "odm.img" "!TARGET_SUFFIX!" "true"
-if errorlevel 1 exit /b 1
-
-call :FLASH_IMAGE "vendor_boot" "vendor_boot.img" "!TARGET_SUFFIX!" "false"
-if errorlevel 1 exit /b 1
-
-call :FLASH_IMAGE "vendor_dlkm" "vendor_dlkm.img" "!TARGET_SUFFIX!" "false"
-if errorlevel 1 exit /b 1
-
-call :FLASH_IMAGE "vendor" "vendor.img" "!TARGET_SUFFIX!" "true"
-if errorlevel 1 exit /b 1
-
-call :FLASH_IMAGE "system" "system.img" "!TARGET_SUFFIX!" "true"
-if errorlevel 1 exit /b 1
-
-:: ------------------------------------------------------------
-:: Step 6
-:: Replace stock boot with UT boot
-:: ------------------------------------------------------------
-
-echo ==========================================
-echo  Step 6: Installing UT boot
-echo ==========================================
-echo.
-
-call :FLASH_IMAGE "boot" "boot.img" "!TARGET_SUFFIX!" "true"
-if errorlevel 1 exit /b 1
-
-:: ------------------------------------------------------------
-:: Step 7
-:: Activate target
-:: ------------------------------------------------------------
-
-echo ==========================================
-echo  Step 7: Activating target slot
-echo ==========================================
-echo.
-
-echo Setting active slot to !TARGET_SLOT!...
-
-"%FASTBOOT%" set_active "!TARGET_SLOT!"
-
-if errorlevel 1 (
-    echo Failed to activate target slot.
-    pause
-    exit /b 1
-)
-
-echo.
-
-echo ==========================================
-echo  Update completed successfully
-echo ==========================================
-echo.
-
-echo Old slot:
-echo   !CURRENT_SLOT!
-echo.
-
-echo Updated slot:
-echo   !TARGET_SLOT!
-echo.
-
-goto FINISH
-
-
-:: ============================================================
-:: FRESH INSTALL
-:: ============================================================
-
-:FRESH_INSTALL
-
-echo ==========================================
-echo  Fresh Ubuntu Touch Installation
 echo ==========================================
 echo.
 
 echo This will recreate the dynamic partition
 echo layout using super_empty.img.
+if /I "!FRESH_INSTALL!"=="false" echo User data will NOT be touched.
 echo.
 
 set /p SUPERCHOICE="Continue? (Y/N): "
@@ -527,6 +296,24 @@ if /I not "!SUPERCHOICE!"=="Y" (
 )
 
 echo.
+
+:: ------------------------------------------------------------
+:: Update only: stock boot first
+:: ------------------------------------------------------------
+
+if /I "!FRESH_INSTALL!"=="true" goto AFTER_STOCK_BOOT
+
+echo ==========================================
+echo  Flashing stock boot
+echo ==========================================
+echo.
+
+call :FLASH_IMAGE "boot" "boot_stock.img" "!CURRENT_SUFFIX!" "true"
+if errorlevel 1 ( pause & exit /b 1 )
+
+echo.
+
+:AFTER_STOCK_BOOT
 
 :: ------------------------------------------------------------
 :: Wipe super (in bootloader)
@@ -568,8 +355,14 @@ if errorlevel 1 (
 echo.
 
 :: ------------------------------------------------------------
-:: Userdata wipe
+:: Userdata wipe (install only)
 :: ------------------------------------------------------------
+
+if /I "!FRESH_INSTALL!"=="false" (
+    echo Update: skipping data wipe.
+    echo.
+    goto FLASH_ACTIVE
+)
 
 echo WARNING: This will erase all user data.
 echo.
@@ -623,6 +416,8 @@ if /I "!WIPECHOICE!"=="Y" (
     echo.
 )
 
+:FLASH_ACTIVE
+
 :: ------------------------------------------------------------
 :: Flash active slot only
 :: ------------------------------------------------------------
@@ -635,25 +430,25 @@ echo ==========================================
 echo.
 
 call :FLASH_IMAGE "dtbo" "dtbo.img" "!ACTIVE_SUFFIX!" "false"
-if errorlevel 1 exit /b 1
+if errorlevel 1 ( pause & exit /b 1 )
 
 call :FLASH_IMAGE "boot" "boot.img" "!ACTIVE_SUFFIX!" "true"
-if errorlevel 1 exit /b 1
+if errorlevel 1 ( pause & exit /b 1 )
 
 call :FLASH_IMAGE "odm" "odm.img" "!ACTIVE_SUFFIX!" "true"
-if errorlevel 1 exit /b 1
+if errorlevel 1 ( pause & exit /b 1 )
 
 call :FLASH_IMAGE "vendor_boot" "vendor_boot.img" "!ACTIVE_SUFFIX!" "false"
-if errorlevel 1 exit /b 1
+if errorlevel 1 ( pause & exit /b 1 )
 
 call :FLASH_IMAGE "vendor_dlkm" "vendor_dlkm.img" "!ACTIVE_SUFFIX!" "false"
-if errorlevel 1 exit /b 1
+if errorlevel 1 ( pause & exit /b 1 )
 
 call :FLASH_IMAGE "vendor" "vendor.img" "!ACTIVE_SUFFIX!" "true"
-if errorlevel 1 exit /b 1
+if errorlevel 1 ( pause & exit /b 1 )
 
 call :FLASH_IMAGE "system" "system.img" "!ACTIVE_SUFFIX!" "true"
-if errorlevel 1 exit /b 1
+if errorlevel 1 ( pause & exit /b 1 )
 
 echo.
 echo ==========================================
@@ -915,7 +710,7 @@ exit /b 1
 call :GET_USERSPACE
 
 if /I "!IS_USERSPACE!"=="yes" (
-    echo Device is in fastbootd.
+    echo Device is already in fastbootd.
     exit /b 0
 )
 
@@ -952,7 +747,6 @@ exit /b 1
 
 set "SIZE_ERROR=0"
 
-:: Check fastboot output for space/size related errors
 findstr /I /R /C:"FAILED.*remote.*space" /C:"remote.*space" /C:"remote.*size" /C:"remote.*full" /C:"partition.*full" /C:"partition.*too large" /C:"partition.*size" /C:"not enough space" /C:"insufficient space" /C:"size.*too large" /C:"image.*too large" /C:"file.*too large" /C:"super.*full" /C:"super.*space" /C:"logical partition.*space" /C:"logical.*exceeds.*container" /C:"no space left" /C:"opposing.*aosp" "%FLASHOUT%" >nul
 
 if not errorlevel 1 (
@@ -1061,7 +855,7 @@ if "!SIZE_ERROR!"=="0" (
 )
 
 :: ------------------------------------------------------------
-:: Ask about wipe-super
+:: Size error
 :: ------------------------------------------------------------
 
 echo.
@@ -1073,6 +867,7 @@ echo.
 
 echo Failed to flash %FLASH_FILE%.
 echo.
+
 echo If the error is "size too big" or
 echo "partition is full", would you like to
 echo (W)ipe super or (C)ancel?
