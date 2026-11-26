@@ -17,7 +17,7 @@ https://t.me/garnetlinux
 | **Haptics** | Broken | |
 | **Bluetooth** | Working | |
 | **Battery & Charging** | Working | Fast charging supported |
-| **Telephony** | Partial | Calls, SMS, Data |
+| **Telephony** | Working | Calls, SMS, Data |
 | **Waydroid** | Working | |
 | **Camera** | Working | |
 | **GPS** | Working | |
@@ -29,7 +29,7 @@ https://t.me/garnetlinux
 
 * **Recovery Mode:** Recovery mode does not work. Attempting to boot into recovery will simply boot into Ubuntu Touch anyway.
 * **Flashlight:** Flashlight from quick settings doesn't work. Download the UTorch app instead.
-* **Telephony:** 5G is broken and audio passthrough in calls
+* **Telephony:** 5G is broken
 * **Bluetooth:** 50% chance of loading or failing
 
 
