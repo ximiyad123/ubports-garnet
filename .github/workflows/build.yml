@@ -1,3 +1,4 @@
+
 name: Build System Image
 
 on:
@@ -21,6 +22,7 @@ jobs:
         run: |
           sudo apt-get update && sudo apt-get install -y \
             git \
+            git-lfs \
             make \
             bc \
             bison \
@@ -44,6 +46,9 @@ jobs:
           cd "$GITHUB_WORKSPACE"
 
           find . -type f -name "*.sh" -exec chmod +x {} +
+
+          git lfs install
+          git lfs pull
 
           ./build.sh
           ./build/prepare-fake-ota.sh out/device_garnet_usrmerge.tar.xz ota
@@ -98,7 +103,13 @@ jobs:
               --no-merges > changelog.txt
           fi
 
-          # Create release description
+          # Create release description:
+          #
+          # README.md
+          #
+          # ---
+          #
+          # commits since previous release
           {
             cat README.md
 
@@ -116,7 +127,7 @@ jobs:
 
           echo "release_name=$RELEASE_NAME" >> "$GITHUB_OUTPUT"
 
-          # Tag format: ubuntu-touch-DDMMYYYY
+          # Unique tag for this release
           echo "tag=ubuntu-touch-${DATE}" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub Release
